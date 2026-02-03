@@ -30,7 +30,7 @@ dann einmal mit `sudo reboot` neustarten
 Die von Ihnen gewählten Pins in der `config.py` werden mit 3,3V versorgt. Die anderen Pins der LED's und der Knöpfe müssen dann an einer der Massen angeschlossen werden.
 
 ```plaintext
-(SD-Karten-Slot Seite)
+          (SD-Karten-Slot Seite)
          3,3V  [01] [02]  5V
   (I2C) GPIO2  [03] [04]  5V
   (I2C) GPIO3  [05] [06]  GND ⚫
@@ -51,7 +51,7 @@ Die von Ihnen gewählten Pins in der `config.py` werden mit 3,3V versorgt. Die a
        GPIO19  [35] [36]  GPIO16
        GPIO26  [37] [38]  GPIO20
           GND  [39] [40]  GPIO21
-       (USB/Ethernet Seite)
+          (USB/Ethernet Seite)
 ```
 
 ### Konfiguration
