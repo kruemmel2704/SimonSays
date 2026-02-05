@@ -31,7 +31,7 @@ Die von Ihnen gewählten Pins in der `config.py` werden mit 3,3V versorgt. Die a
 
 ```plaintext
           (SD-Karten-Slot Seite)
-         3,3V  [01] [02]  5V
+         3,3V  [01] [02]  <- Spk (5V) 🔊
   (I2C) GPIO2  [03] [04]  5V
   (I2C) GPIO3  [05] [06]  GND ⚫
         GPIO4  [07] [08]  GPIO14
@@ -46,7 +46,7 @@ Die von Ihnen gewählten Pins in der `config.py` werden mit 3,3V versorgt. Die a
           GND  [25] [26]  GPIO7
         GPIO0  [27] [28]  GPIO1
 🟡 Btn (05) -> [29] [30]  GND ⚫
-        GPIO6  [31] [32]  GPIO12
+🔊 Spk (06) -> [31] [32]  GPIO12
        GPIO13  [33] [34]  GND ⚫
        GPIO19  [35] [36]  GPIO16
        GPIO26  [37] [38]  GPIO20
