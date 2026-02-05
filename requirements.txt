@@ -1,4 +1,3 @@
 gpiozero
-rpi.gpio
-# Falls du Bookworm (neuestes Raspberry OS) nutzt, brauchst du evtl. auch:
 rpi-lgpio
+# rpi-lgpio ist der moderne Ersatz für RPi.GPIO auf Kernel 6+

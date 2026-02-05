@@ -4,14 +4,12 @@ services:
   simon-says:
     build: .
     container_name: simon_game
-    # 'privileged: true' gibt dem Container vollen Zugriff auf die Hardware (GPIO)
-    privileged: true
+    privileged: true  # Zwingend notwendig für Hardware-Zugriff
     restart: unless-stopped
     environment:
-      # WICHTIG: Sorgt dafür, dass print() Ausgaben sofort im Log erscheinen
       - PYTHONUNBUFFERED=1
-      # Optional: Pin Factory festlegen, falls es Probleme gibt
-      - GPIOZERO_PIN_FACTORY=RPiGPIO
-    devices:
-      # Mappt den GPIO-Speicherzugriff (oft nötig als Backup zu privileged)
-      - /dev/gpiomem:/dev/gpiomem
+      # Wir zwingen gpiozero, die moderne lgpio Factory zu nutzen
+      - GPIOZERO_PIN_FACTORY=lgpio
+    volumes:
+      # Optional: Falls wir Pins zur Laufzeit ändern wollen, binden wir die Config ein
+      - ./Config.py:/app/Config.py

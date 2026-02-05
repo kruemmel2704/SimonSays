@@ -10,6 +10,10 @@ HARDWARE_SETUP = {
     "yellow": {"led": 25, "btn": 5}
 }
 
+BUZZER_PIN = 6
+
+
 # Geschwindigkeitseinstellungen (in Sekunden)
 FLASH_DELAY = 0.5
 SEQUENCE_PAUSE = 0.3
+
