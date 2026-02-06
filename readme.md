@@ -30,6 +30,8 @@ Die Software nutzt die BCM-Nummerierung. Die Taster sind gegen GND geschaltet (i
 | Sound | Buzzer | 6 | Pin 31 |
 | Masse | Common GND | - | "z.B. Pin 6, 9, 14" |
 
+<div style="page-break-after: always;"></div>
+
 ```plaintext
           (SD-Karten-Slot Seite)
          3,3V  [01] [02]  <- Spk (5V) 🔊
@@ -75,7 +77,7 @@ Die Software nutzt die BCM-Nummerierung. Die Taster sind gegen GND geschaltet (i
 ****Game Over****: Bei falscher Eingabe blinken alle LEDs und der Buzzer piept 3x langsam. Danach kehrt das Programm zur Bereitschafts-Welle zurück.
 
 
-
+<div style="page-break-after: always;"></div>
 
 ## 5. Deployment via Docker
 
@@ -102,3 +104,6 @@ docker compose logs -f
 - ****GND****: Achte darauf, dass alle Buttons und LED-Kathoden eine saubere Verbindung zur gemeinsamen Masse (GND) haben.
 
 - ****Case Sensitivity****: Unter Linux muss die Konfigurationsdatei strikt kleingeschrieben als config.py vorliegen, damit der Import im Docker-Container funktioniert.
+
+
+****Projekt von****: ***Sebastian Scholtysek, Robin Zindler, Lars Krümmel***
