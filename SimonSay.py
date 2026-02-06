@@ -1,7 +1,7 @@
 import time
 import random
 from gpiozero import LED, Button, Buzzer
-from config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE
+from Config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE
 
 class SimonSaysGame:
     def __init__(self):
