@@ -2,6 +2,11 @@ import time
 import random
 from gpiozero import LED, Button, Buzzer
 from Config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE
+from flask import Flask
+
+app = Flask("SimonSaysGame")
+
+@app.route("/")
 
 class SimonSaysGame:
     def __init__(self):
