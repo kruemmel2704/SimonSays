@@ -10,7 +10,7 @@ from gpiozero import LED, Button, Buzzer
 # BUZZER_PIN = 24
 # FLASH_DELAY = 0.3
 # SEQUENCE_PAUSE = 0.15
-from Config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE
+from app.templates.Config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE
 
 # Flask ist importiert, wird hier aber (noch) nicht sinnvoll genutzt.
 # Hinweis: Ein @app.route("/") ohne Funktion darunter ist syntaktisch/funktional falsch.

@@ -2,4 +2,5 @@ gpiozero
 rpi-lgpio
 flask
 flask-sqlalchemy
-# rpi-lgpio ist der moderne Ersatz für RPi.GPIO auf Kernel 6+
+flask-socketio
+eventlet
