@@ -108,5 +108,9 @@ docker compose logs -f
 
 ****Projekt von****: ***Sebastian Scholtysek, Robin Zindler, Lars Krümmel***
 ## 7.Erweiterung
+<<<<<<< HEAD
 
 test
+=======
+Test
+>>>>>>> 1a8d502 (Test)
