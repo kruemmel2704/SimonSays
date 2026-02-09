@@ -107,3 +107,4 @@ docker compose logs -f
 
 
 ****Projekt von****: ***Sebastian Scholtysek, Robin Zindler, Lars Krümmel***
+## 7.Erweiterung
