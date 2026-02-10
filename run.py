@@ -1,12 +1,22 @@
-import os
-import sys
-
-# Sicherstellen, dass das aktuelle Verzeichnis im Pfad ist
-sys.path.append(os.getcwd())
-
 from app import create_app, socketio
 
+# Erstellen der App-Instanz über die Factory-Funktion
 app = create_app()
 
 if __name__ == "__main__":
-    socketio.run(app, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)
+    
+    print("  ██████  ██▓ ███▄ ▄███▓ ▒█████   ███▄    █      ██████  ▄▄▄     ▓██   ██▓  ██████ ")
+    print("▒██    ▒ ▓██▒▓██▒▀█▀ ██▒▒██▒  ██▒ ██ ▀█   █    ▒██    ▒ ▒████▄    ▒██  ██▒▒██    ▒ ")
+    print("░ ▓██▄   ▒██▒▓██    ▓██░▒██░  ██▒▓██  ▀█ ██▒   ░ ▓██▄   ▒██  ▀█▄   ▒██ ██░░ ▓██▄   ")
+    print("  ▒   ██▒░██░▒██    ▒██ ▒██   ██░▓██▒  ▐▌██▒     ▒   ██▒░██▄▄▄▄██  ░ ▐██▓░  ▒   ██▒")
+    print("▒██████▒▒░██░▒██▒   ░██▒░ ████▓▒░▒██░   ▓██░   ▒██████▒▒ ▓█   ▓██▒ ░ ██▒▓░▒██████▒▒")
+    print("▒ ▒▓▒ ▒ ░░▓  ░ ▒░   ░  ░░ ▒░▒░▒░ ░ ▒░   ▒ ▒    ▒ ▒▓▒ ▒ ░ ▒▒   ▓▒█░  ██▒▒▒ ▒ ▒▓▒ ▒ ░")
+    print("░ ░▒  ░ ░ ▒ ░░  ░      ░  ░ ▒ ▒░ ░ ░░   ░ ▒░   ░ ░▒  ░ ░  ▒   ▒▒ ░▓██ ░▒░ ░ ░▒  ░ ░")
+    print("░  ░  ░   ▒ ░░      ░   ░ ░ ░ ▒     ░   ░ ░    ░  ░  ░    ░   ▒   ▒ ▒ ░░  ░  ░  ░  ")
+    print("      ░   ░         ░       ░ ░           ░          ░        ░  ░░ ░           ░  ")
+    print("                                                                  ░ ░                   ")
+    # Wir nutzen socketio.run anstelle von app.run, 
+    # damit die WebSocket-Verbindung (Echtzeit) stabil funktioniert.
+    # host='0.0.0.0' macht den Server im lokalen Netzwerk erreichbar.
+    print("--- Simon Says Web-Server wird gestartet ---")
+    socketio.run(app, host='0.0.0.0', port=5000, debug=False, allow_unsafe_werkzeug=True)
