@@ -1,6 +1,7 @@
 import time
 import random
 import threading
+from turtle import color
 from gpiozero import LED, Button, Buzzer
 # Wir importieren die Konfiguration aus deinem app-Ordner
 from app.config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE
@@ -62,15 +63,26 @@ class SimonSaysGame:
         for color in self.sequence:
             self.flash_led(color, is_simon=True)
 
+    def handle_web_input(self, color):
+    # Speichere den Web-Klick in einer Variable, die wait_for_any_button prüft
+        self.last_web_click = color
+
     def wait_for_any_button(self):
+        self.last_web_click = None
         while True:
+            # 1. Physische Buttons prüfen
             for color, btn in self.buttons.items():
                 if btn.is_pressed:
-                    # Sobald gedrückt, halten wir die Schleife an, bis losgelassen wurde
-                    while btn.is_pressed:
-                        time.sleep(0.01)
+                    while btn.is_pressed: time.sleep(0.01)
                     return color
-            time.sleep(0.01)
+        
+            # 2. Web-Klicks prüfen
+                if self.last_web_click:
+                    color = self.last_web_click
+                    self.last_web_click = None
+                    return color
+            
+        time.sleep(0.01)
 
     def get_player_input(self):
         self._emit_event('game_status', {'msg': 'Du bist dran!'})
