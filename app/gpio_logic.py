@@ -47,19 +47,11 @@ class SimonSaysGame:
 
     # --- HARDWARE STEUERUNG ---
     def flash_led(self, color):
-        """Lässt LED leuchten + sendet Signal an Web"""
-        # Signal an die Webseite senden (AN)
-        self._emit('led_state', {'color': color, 'state': 'on'})
-        
+        self._emit('led_state', {'color': color, 'state': 'on'}) # Browser schaltet Licht an
         self.leds[color].on()
-        self.buzzer.on()
         time.sleep(self.flash_delay)
-        
         self.leds[color].off()
-        self.buzzer.off()
-        
-        # Signal an die Webseite senden (AUS)
-        self._emit('led_state', {'color': color, 'state': 'off'})
+        self._emit('led_state', {'color': color, 'state': 'off'}) # Browser schaltet Licht aus
         time.sleep(self.sequence_pause)
 
     def play_sequence(self):
