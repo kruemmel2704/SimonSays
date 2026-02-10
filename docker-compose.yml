@@ -3,13 +3,13 @@ version: '3.8'
 services:
   simon-says:
     build: .
-    container_name: simon_game
-    privileged: true  # Zwingend notwendig für Hardware-Zugriff
-    restart: unless-stopped
+    container_name: simon_game_web
+    privileged: true
+    ports:
+      - "5000:5000"
     environment:
       - PYTHONUNBUFFERED=1
-      # Wir zwingen gpiozero, die moderne lgpio Factory zu nutzen
       - GPIOZERO_PIN_FACTORY=lgpio
-    volumes:
-      # Optional: Falls wir Pins zur Laufzeit ändern wollen, binden wir die Config ein
-      - ./Config.py:/app/Config.py
+    devices:
+      - /dev/gpiomem:/dev/gpiomem
+    restart: unless-stopped

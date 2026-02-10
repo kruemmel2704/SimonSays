@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <h1 class="display-4 mb-4">🏆 Highscore Board</h1>
+        
+        <div class="card shadow">
+            <div class="card-body p-0">
+                <table class="table table-dark table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="width: 20%">Rang</th>
+                            <th scope="col">Name</th>
+                            <th scope="col" style="width: 30%">Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if scores %}
+                            {% for entry in scores %}
+                            <tr>
+                                <th scope="row">
+                                    {% if loop.index == 1 %} 🥇 
+                                    {% elif loop.index == 2 %} 🥈 
+                                    {% elif loop.index == 3 %} 🥉 
+                                    {% else %} {{ loop.index }} 
+                                    {% endif %}
+                                </th>
+                                <td>{{ entry.name }}</td>
+                                <td class="fw-bold text-info">{{ entry.score }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="3" class="py-5 text-muted">
+                                    Noch keine Highscores vorhanden. <br>
+                                    Spiel eine Runde, um dich zu verewigen!
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <a href="/remote" class="btn btn-outline-info btn-lg">Jetzt spielen & Fernsteuern</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

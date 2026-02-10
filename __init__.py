@@ -1,0 +1,1 @@
+app = Flask("SimonSaysGame")
