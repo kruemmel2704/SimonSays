@@ -78,71 +78,43 @@
 
 {% block extra_js %}
 <script>
-    // Verbindung aufbauen
+    // Verbindung zum Namespace /remote aufbauen
     var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + '/remote');
 
-    // --- INPUT FUNKTIONEN (Vom Browser zum Pi) ---
+    const statusMsg = document.getElementById('status-msg');
 
-    function sendInput(color) {
-        console.log("Sende Klick: " + color);
-        // 1. Visuelles Feedback sofort geben (damit es sich schnell anfühlt)
-        flashButton(color);
-        
-        // 2. An den Server senden
-        socket.emit('remote_input', {color: color});
-    }
-
-    function setDifficulty(level) {
-        socket.emit('change_difficulty', {level: level});
-    }
-
-    // --- OUTPUT FUNKTIONEN (Vom Pi zum Browser) ---
-
+    // 1. Verbindung bestätigen
     socket.on('connect', function() {
-        document.getElementById('status-msg').innerText = "Verbunden!";
-        document.getElementById('status-msg').className = "text-success";
+        statusMsg.innerText = "Verbunden";
+        statusMsg.className = "text-success";
     });
 
-    // Wenn Simon (der Computer) eine LED zeigt
+    // 2. DAS HERZSTÜCK: Auf LED-Signale vom Pi reagieren
     socket.on('led_state', function(data) {
+        // data enthält z.B. {color: 'red', state: 'on'}
+        const btn = document.getElementById('btn-' + data.color);
+        
         if (data.state === 'on') {
-            document.getElementById('btn-' + data.color).classList.add('active');
-            
-            // Optional: Töne im Browser abspielen? (Hier Platzhalter)
-            // playSound(data.color); 
-            
+            btn.classList.add('active');
         } else {
-            document.getElementById('btn-' + data.color).classList.remove('active');
+            btn.classList.remove('active');
         }
     });
 
+    // 3. Status-Nachrichten anzeigen (z.B. "Simon zeigt...")
     socket.on('game_status', function(data) {
-        document.getElementById('status-msg').innerText = data.msg;
+        statusMsg.innerText = data.msg;
     });
 
+    // 4. Game Over Handling
     socket.on('game_over', function(data) {
-        document.getElementById('status-msg').innerText = "Game Over! Score: " + data.score;
-        document.getElementById('status-msg').className = "text-danger";
-        // Kurzes rotes Blinken aller Buttons als Feedback
-        flashAll();
+        statusMsg.innerText = "Game Over! Score: " + data.score;
+        statusMsg.className = "text-danger";
     });
 
-    // --- HILFSFUNKTIONEN ---
-
-    function flashButton(color) {
-        const btn = document.getElementById('btn-' + color);
-        btn.classList.add('active');
-        setTimeout(() => {
-            btn.classList.remove('active');
-        }, 300);
-    }
-
-    function flashAll() {
-        const colors = ['red', 'green', 'blue', 'yellow'];
-        colors.forEach(c => document.getElementById('btn-' + c).classList.add('active'));
-        setTimeout(() => {
-            colors.forEach(c => document.getElementById('btn-' + c).classList.remove('active'));
-        }, 500);
+    // Funktion für deine eigenen Klicks (Web -> Pi)
+    function sendInput(color) {
+        socket.emit('remote_input', {color: color});
     }
 </script>
 {% endblock %}
