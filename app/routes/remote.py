@@ -41,3 +41,11 @@ def handle_remote_input(data):
     # Hier könnte man eine Logik einbauen, um den physischen Tastendruck 
     # durch einen virtuellen zu ersetzen/ergänzen.
     emit('remote_feedback', {'color': color}, broadcast=True, namespace='/remote')
+
+@socketio.on('web_button_press', namespace='/remote')
+def handle_web_press(data):
+    color = data.get('color')
+    print(f"Web-Klick empfangen: {color}")
+    if game_instance:
+        # Wir simulieren für die Spiellogik einen Tastendruck
+        game_instance.handle_web_input(color)
