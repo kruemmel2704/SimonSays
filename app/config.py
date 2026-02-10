@@ -1,6 +1,6 @@
 # app/config.py
 from gpiozero import LED, Button, Buzzer
-
+ 
 # Definition der GPIO Pins (BCM Nummerierung)
 # Diese Struktur erlaubt es der gpio_logic, dynamisch über Farben zu iterieren.
 HARDWARE_SETUP = {
