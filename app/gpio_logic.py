@@ -1,7 +1,6 @@
 import time
 import random
 import threading
-from turtle import color
 from gpiozero import LED, Button, Buzzer
 # Wir importieren die Konfiguration aus deinem app-Ordner
 from app.config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE
