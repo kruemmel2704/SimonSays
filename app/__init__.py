@@ -8,6 +8,7 @@ game_instance = None
 
 def create_app():
     global game_instance
+    game_instance = SimonSaysGame(socket_callback=game_socket_callback)
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'simon_secret_key'
 
