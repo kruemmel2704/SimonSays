@@ -15,7 +15,6 @@ def handle_connect():
 def handle_difficulty(data):
     """
     Ändert den Schwierigkeitsgrad zur Laufzeit.
-    Erwartet data: {'level': 'easy' | 'medium' | 'hard'}
     """
     level = data.get('level')
     from app.config import DIFFICULTY_SETTINGS
@@ -23,8 +22,9 @@ def handle_difficulty(data):
     if level in DIFFICULTY_SETTINGS:
         settings = DIFFICULTY_SETTINGS[level]
         # Wir ändern die Werte direkt in der laufenden Spielinstanz
-        game_instance.flash_delay = settings['flash']
-        game_instance.sequence_pause = settings['pause']
+        if game_instance:
+            game_instance.flash_delay = settings['flash']
+            game_instance.sequence_pause = settings['pause']
         
         print(f"Schwierigkeit geändert auf: {level}")
         emit('difficulty_changed', {'level': level}, broadcast=True, namespace='/remote')
@@ -32,19 +32,19 @@ def handle_difficulty(data):
 @socketio.on('remote_input', namespace='/remote')
 def handle_remote_input(data):
     """
-    Ermöglicht es, das Spiel über die Website zu steuern.
-    Erwartet data: {'color': 'red' | 'green' | ...}
+    Hier kommt der Klick aus der HTML an (remote_input).
+    Wir müssen:
+    1. Feedback an alle Browser senden (damit es überall blinkt).
+    2. Die Spiel-Logik informieren (damit das Spiel weitergeht).
     """
     color = data.get('color')
-    print(f"Remote-Klick erkannt: {color}")
+    print(f"Web-Input empfangen: {color}")
     
-    # Hier könnte man eine Logik einbauen, um den physischen Tastendruck 
-    # durch einen virtuellen zu ersetzen/ergänzen.
-    emit('remote_feedback', {'color': color}, broadcast=True, namespace='/remote')
-
-@socketio.on('web_button_press', namespace='/remote')
-def handle_web_press(data):
-    color = data.get('color')
-    print(f"Web-Klick empfangen: {color}")
+    # 1. Visuelles Feedback an alle verbundenen Clients (Synchronisation)
+    emit('led_state', {'color': color, 'state': 'on'}, broadcast=True, namespace='/remote')
+    # Kurze Pause simulieren wir im Browser per JS Timeout, 
+    # hier senden wir nur das Signal "Es wurde gedrückt".
+    
+    # 2. Spiel-Logik informieren (DAS FEHLTE VORHER AN DIESER STELLE)
     if game_instance:
         game_instance.process_remote_input(color)
