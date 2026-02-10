@@ -47,5 +47,4 @@ def handle_web_press(data):
     color = data.get('color')
     print(f"Web-Klick empfangen: {color}")
     if game_instance:
-        # Wir simulieren für die Spiellogik einen Tastendruck
-        game_instance.handle_web_input(color)
+        game_instance.process_remote_input(color)
