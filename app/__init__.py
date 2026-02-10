@@ -1,0 +1,24 @@
+from flask import Flask
+from flask_socketio import SocketIO
+
+socketio = SocketIO()
+game_instance = None
+
+def create_app():
+    global game_instance
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'secret!'
+    socketio.init_app(app, cors_allowed_origins="*")
+
+    from app.routes.main import main_bp
+    from app.routes.remote import remote_bp
+    app.register_blueprint(main_bp)
+    app.register_blueprint(remote_bp)
+
+    from app.gpio_logic import SimonSaysGame
+    game_instance = SimonSaysGame(socket_callback=lambda e, d: socketio.emit(e, d, namespace='/remote'))
+    
+    import threading
+    threading.Thread(target=game_instance.start_game_loop, daemon=True).start()
+    
+    return app
