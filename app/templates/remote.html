@@ -145,4 +145,45 @@
         }, 500);
     }
 </script>
+
+<script>
+    // Verbindung zum Namespace /remote aufbauen
+    var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + '/remote');
+
+    const statusMsg = document.getElementById('status-msg');
+
+    // 1. Verbindung bestätigen
+    socket.on('connect', function() {
+        statusMsg.innerText = "Verbunden";
+        statusMsg.className = "text-success";
+    });
+
+    // 2. DAS HERZSTÜCK: Auf LED-Signale vom Pi reagieren
+    socket.on('led_state', function(data) {
+        // data enthält z.B. {color: 'red', state: 'on'}
+        const btn = document.getElementById('btn-' + data.color);
+        
+        if (data.state === 'on') {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    // 3. Status-Nachrichten anzeigen (z.B. "Simon zeigt...")
+    socket.on('game_status', function(data) {
+        statusMsg.innerText = data.msg;
+    });
+
+    // 4. Game Over Handling
+    socket.on('game_over', function(data) {
+        statusMsg.innerText = "Game Over! Score: " + data.score;
+        statusMsg.className = "text-danger";
+    });
+
+    // Funktion für deine eigenen Klicks (Web -> Pi)
+    function sendInput(color) {
+        socket.emit('remote_input', {color: color});
+    }
+</script>
 {% endblock %}
