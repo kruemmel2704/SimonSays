@@ -14,11 +14,24 @@ def handle_remote_input(data):
     color = data.get('color')
     print(f"Web-Input empfangen: {color}")
     
-    # WICHTIG: Wir holen uns die aktuelle Instanz direkt aus dem app-Modul
-    import app 
+    # Wir importieren die Variable direkt aus dem Hauptpaket app
+    import app
     if app.game_instance:
         app.game_instance.process_remote_input(color)
-        # Feedback an alle senden, damit die LED im Browser leuchtet
+        # Feedback an alle Browser senden
         emit('led_state', {'color': color, 'state': 'on'}, broadcast=True, namespace='/remote')
     else:
-        print("Kritischer Fehler: game_instance ist None!")
+        print("Fehler: game_instance ist nicht initialisiert!")
+
+@socketio.on('change_difficulty', namespace='/remote')
+def handle_difficulty(data):
+    level = data.get('level')
+    from app.config import DIFFICULTY_SETTINGS
+    import app
+
+    if level in DIFFICULTY_SETTINGS and app.game_instance:
+        settings = DIFFICULTY_SETTINGS[level]
+        app.game_instance.flash_delay = settings['flash']
+        app.game_instance.sequence_pause = settings['pause']
+        print(f"Schwierigkeit auf {level} gesetzt")
+        emit('difficulty_changed', {'level': level}, broadcast=True, namespace='/remote')

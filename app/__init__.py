@@ -8,11 +8,10 @@ game_instance = None
 
 def create_app():
     global game_instance
-    game_instance = SimonSaysGame(socket_callback=game_socket_callback)
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'simon_secret_key'
 
-    # SocketIO starten
+    # SocketIO initialisieren
     socketio.init_app(app, cors_allowed_origins="*")
 
     # Blueprints registrieren
@@ -21,15 +20,13 @@ def create_app():
     app.register_blueprint(main_bp)
     app.register_blueprint(remote_bp)
 
-    # --- HIER IST DIE WICHTIGE VERBINDUNG ---
+    # WICHTIG: Import hier, um Zirkelbezüge zu vermeiden
     from app.gpio_logic import SimonSaysGame
 
-    # Diese Funktion ist der Bote, der die Nachricht vom Spiel an die Webseite trägt
     def game_socket_callback(event, data):
-        # WICHTIG: namespace='/remote' muss gesetzt sein!
         socketio.emit(event, data, namespace='/remote')
 
-    # Spiel erstellen und den Boten (Callback) mitgeben
+    # Instanz erstellen
     game_instance = SimonSaysGame(socket_callback=game_socket_callback)
 
     # Hardware-Thread starten
