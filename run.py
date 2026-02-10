@@ -4,6 +4,17 @@ from app import create_app, socketio
 app = create_app()
 
 if __name__ == "__main__":
+    
+    print("  ██████  ██▓ ███▄ ▄███▓ ▒█████   ███▄    █      ██████  ▄▄▄     ▓██   ██▓  ██████ ")
+    print("▒██    ▒ ▓██▒▓██▒▀█▀ ██▒▒██▒  ██▒ ██ ▀█   █    ▒██    ▒ ▒████▄    ▒██  ██▒▒██    ▒ ")
+    print("░ ▓██▄   ▒██▒▓██    ▓██░▒██░  ██▒▓██  ▀█ ██▒   ░ ▓██▄   ▒██  ▀█▄   ▒██ ██░░ ▓██▄   ")
+    print("  ▒   ██▒░██░▒██    ▒██ ▒██   ██░▓██▒  ▐▌██▒     ▒   ██▒░██▄▄▄▄██  ░ ▐██▓░  ▒   ██▒")
+    print("▒██████▒▒░██░▒██▒   ░██▒░ ████▓▒░▒██░   ▓██░   ▒██████▒▒ ▓█   ▓██▒ ░ ██▒▓░▒██████▒▒")
+    print("▒ ▒▓▒ ▒ ░░▓  ░ ▒░   ░  ░░ ▒░▒░▒░ ░ ▒░   ▒ ▒    ▒ ▒▓▒ ▒ ░ ▒▒   ▓▒█░  ██▒▒▒ ▒ ▒▓▒ ▒ ░")
+    print("░ ░▒  ░ ░ ▒ ░░  ░      ░  ░ ▒ ▒░ ░ ░░   ░ ▒░   ░ ░▒  ░ ░  ▒   ▒▒ ░▓██ ░▒░ ░ ░▒  ░ ░")
+    print("░  ░  ░   ▒ ░░      ░   ░ ░ ░ ▒     ░   ░ ░    ░  ░  ░    ░   ▒   ▒ ▒ ░░  ░  ░  ░  ")
+    print("      ░   ░         ░       ░ ░           ░          ░        ░  ░░ ░           ░  ")
+    print("                                                                  ░ ░                   ")
     # Wir nutzen socketio.run anstelle von app.run, 
     # damit die WebSocket-Verbindung (Echtzeit) stabil funktioniert.
     # host='0.0.0.0' macht den Server im lokalen Netzwerk erreichbar.
