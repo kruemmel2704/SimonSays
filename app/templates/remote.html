@@ -2,58 +2,95 @@
 
 {% block extra_css %}
 <style>
-    /* Das Spielfeld zentrieren */
+    /* Haupt-Spielfeld: Ein runder Simon-Look */
+    .simon-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+
     .game-board {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        max-width: 400px;
-        margin: 0 auto;
-        padding: 20px;
-        background: #2c2c2c;
-        border-radius: 50%; /* Rundes Simon-Design */
-        border: 10px solid #333;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        gap: 20px;
+        max-width: 420px;
+        width: 100%;
+        padding: 25px;
+        background: radial-gradient(circle, #333333 0%, #111111 100%);
+        border-radius: 50%;
+        border: 12px solid #1a1a1a;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+        position: relative;
     }
 
+    /* Button-Basis-Design */
     .simon-btn {
         aspect-ratio: 1 / 1;
-        border-radius: 20px; /* Leicht abgerundete Ecken für die Sektoren */
         cursor: pointer;
-        opacity: 0.4; /* Gedimmt wenn aus */
-        transition: all 0.1s ease;
-        border: 4px solid rgba(0,0,0,0.2);
+        opacity: 0.25;
+        transition: all 0.1s ease-in-out;
+        border: 4px solid rgba(0,0,0,0.4);
+        position: relative;
     }
 
-    /* Die Farben */
-    #btn-red { background-color: #ff0000; border-top-left-radius: 100%; }
-    #btn-green { background-color: #00ff00; border-top-right-radius: 100%; }
-    #btn-blue { background-color: #0000ff; border-bottom-left-radius: 100%; }
-    #btn-yellow { background-color: #ffff00; border-bottom-right-radius: 100%; }
+    /* Formgebung der Sektoren */
+    #btn-red { background-color: #ff0000; border-top-left-radius: 100% 100%; }
+    #btn-green { background-color: #00ff00; border-top-right-radius: 100% 100%; }
+    #btn-blue { background-color: #0000ff; border-bottom-left-radius: 100% 100%; }
+    #btn-yellow { background-color: #ffff00; border-bottom-right-radius: 100% 100%; }
 
-    /* Wenn aktiv (durch Server oder Klick) */
-    .simon-btn.active {
-        opacity: 1;
-        box-shadow: 0 0 40px currentColor; /* Leuchteffekt */
-        transform: scale(0.98); /* Kleiner "Drück"-Effekt */
+    /* Glow-Effekte im aktiven Zustand (gesteuert via Pi) */
+    #btn-red.active { 
+        opacity: 1; 
+        box-shadow: 0 0 50px #ff0000, inset 0 0 25px #ff6666; 
+        transform: scale(0.98);
+    }
+    #btn-green.active { 
+        opacity: 1; 
+        box-shadow: 0 0 50px #00ff00, inset 0 0 25px #66ff66; 
+        transform: scale(0.98);
+    }
+    #btn-blue.active { 
+        opacity: 1; 
+        box-shadow: 0 0 50px #0000ff, inset 0 0 25px #6666ff; 
+        transform: scale(0.98);
+    }
+    #btn-yellow.active { 
+        opacity: 1; 
+        box-shadow: 0 0 50px #ffff00, inset 0 0 25px #ffff66; 
+        transform: scale(0.98);
     }
 
-    /* Mitte (Status) */
-    .center-status {
-        grid-column: 1 / -1;
+    /* Status-Anzeige in der Mitte */
+    .center-info {
+        margin-top: 30px;
         text-align: center;
-        margin-top: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    #status-msg {
+        font-size: 1.4rem;
         font-weight: bold;
-        color: #fff;
-        font-size: 1.2rem;
-        min-height: 1.5em;
+        display: block;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .difficulty-group {
+        background: #1f1f1f;
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #333;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container text-center">
-    <h2 class="mb-4">🎮 Remote Control</h2>
+<div class="simon-wrapper">
+    <h1 class="mb-4">🎮 Simon Says Remote</h1>
 
     <div class="game-board">
         <div id="btn-red" class="simon-btn" onclick="sendInput('red')"></div>
@@ -62,15 +99,16 @@
         <div id="btn-yellow" class="simon-btn" onclick="sendInput('yellow')"></div>
     </div>
 
-    <div class="center-status">
-        Status: <span id="status-msg" class="text-info">Verbinde...</span>
-    </div>
-
-    <div class="mt-5">
-        <div class="btn-group" role="group">
-            <button type="button" class="btn btn-outline-secondary" onclick="setDifficulty('easy')">Easy</button>
-            <button type="button" class="btn btn-outline-secondary" onclick="setDifficulty('medium')">Medium</button>
-            <button type="button" class="btn btn-outline-secondary" onclick="setDifficulty('hard')">Hard</button>
+    <div class="center-info">
+        <span id="status-msg" class="text-info">Initialisiere...</span>
+        
+        <div class="difficulty-group mt-4">
+            <p class="small text-muted mb-2">SCHWIERIGKEITSGRAD</p>
+            <div class="btn-group">
+                <button class="btn btn-outline-success btn-sm" onclick="setDifficulty('easy')">EASY</button>
+                <button class="btn btn-outline-warning btn-sm" onclick="setDifficulty('medium')">MEDIUM</button>
+                <button class="btn btn-outline-danger btn-sm" onclick="setDifficulty('hard')">HARD</button>
+            </div>
         </div>
     </div>
 </div>
@@ -78,43 +116,65 @@
 
 {% block extra_js %}
 <script>
-    // Verbindung zum Namespace /remote aufbauen
+    // Verbindung zum Namespace /remote herstellen
     var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + '/remote');
 
     const statusMsg = document.getElementById('status-msg');
 
-    // 1. Verbindung bestätigen
+    // 1. Verbindungsevent
     socket.on('connect', function() {
-        statusMsg.innerText = "Verbunden";
+        console.log("Verbunden mit Pi-Remote");
+        statusMsg.innerText = "Bereit zum Start";
         statusMsg.className = "text-success";
     });
 
-    // 2. DAS HERZSTÜCK: Auf LED-Signale vom Pi reagieren
+    // 2. LIVE-SYNCHRONISATION: Hier empfängt der Browser die LED-Zustände vom Pi
     socket.on('led_state', function(data) {
-        // data enthält z.B. {color: 'red', state: 'on'}
+        // data = { "color": "red", "state": "on" }
         const btn = document.getElementById('btn-' + data.color);
-        
-        if (data.state === 'on') {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
+        if (btn) {
+            if (data.state === 'on') {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
         }
     });
 
-    // 3. Status-Nachrichten anzeigen (z.B. "Simon zeigt...")
+    // 3. Status-Updates (Simon zeigt / Du bist dran)
     socket.on('game_status', function(data) {
         statusMsg.innerText = data.msg;
+        statusMsg.className = "text-info";
     });
 
     // 4. Game Over Handling
     socket.on('game_over', function(data) {
-        statusMsg.innerText = "Game Over! Score: " + data.score;
+        statusMsg.innerText = "GAME OVER! Score: " + data.score;
         statusMsg.className = "text-danger";
+        
+        // Alle Buttons kurz rot blinken lassen
+        flashAll('red');
     });
 
-    // Funktion für deine eigenen Klicks (Web -> Pi)
+    // --- FUNKTIONEN ZUM SENDEN AN DEN PI ---
+
     function sendInput(color) {
+        // Wir senden den Klick an den Pi. 
+        // Das Aufleuchten im Browser passiert erst durch 'led_state' vom Server zurück,
+        // so bleibt alles 100% synchron mit der Hardware.
         socket.emit('remote_input', {color: color});
+    }
+
+    function setDifficulty(level) {
+        socket.emit('change_difficulty', {level: level});
+    }
+
+    function flashAll(colorClass) {
+        const btns = document.querySelectorAll('.simon-btn');
+        btns.forEach(b => b.classList.add('active'));
+        setTimeout(() => {
+            btns.forEach(b => b.classList.remove('active'));
+        }, 500);
     }
 </script>
 {% endblock %}
