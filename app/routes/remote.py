@@ -4,6 +4,10 @@ from app import socketio
 
 remote_bp = Blueprint('remote', __name__)
 
+def game_socket_callback(event, data):
+    # Ohne namespace='/remote' kommt in der remote.html nichts an!
+    socketio.emit(event, data, namespace='/remote')
+
 @socketio.on('connect', namespace='/remote')
 def handle_connect():
     print("Client verbunden mit /remote")
