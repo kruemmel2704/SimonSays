@@ -1,6 +1,22 @@
 import tkinter as tk
 import threading
 import time
+from app.config import HARDWARE_SETUP, DIFFICULTY_BUTTONS
+
+def _get_pin_label(pin, device_type="Device"):
+    # Check Hardware Colors
+    for color, pins in HARDWARE_SETUP.items():
+        if pins['led'] == pin:
+            return f"{color.upper()} LED ({pin})"
+        if pins['btn'] == pin:
+            return f"{color.upper()} Btn ({pin})"
+    
+    # Check Difficulty Buttons
+    for level, btn_pin in DIFFICULTY_BUTTONS.items():
+        if btn_pin == pin:
+            return f"{level.upper()} ({pin})"
+            
+    return f"{device_type} {pin}"
 
 # Global emulator instance
 _emulator = None
@@ -163,7 +179,8 @@ class LED:
     def __init__(self, pin):
         self.pin = pin
         self.is_active = False
-        _get_emulator().add_led(pin, name=f"LED {pin}")
+        name = _get_pin_label(pin, "LED")
+        _get_emulator().add_led(pin, name=name)
     
     def on(self):
         self.is_active = True
@@ -177,7 +194,8 @@ class LED:
 class Button:
     def __init__(self, pin):
         self.pin = pin
-        _get_emulator().add_button(pin, name=f"Button {pin}")
+        name = _get_pin_label(pin, "Button")
+        _get_emulator().add_button(pin, name=name)
 
     @property
     def is_pressed(self):

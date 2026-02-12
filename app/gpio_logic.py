@@ -6,7 +6,7 @@ from gpiozero.exc import BadPinFactory
 from gpiozero.pins.mock import MockFactory
 
 # Wir importieren die Konfiguration
-from app.config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE, IS_RASPI
+from app.config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE, IS_RASPI, DIFFICULTY_SETTINGS, DIFFICULTY_BUTTONS
 
 # Lokaler Mock-Import, falls wir nicht auf dem Pi sind
 if not IS_RASPI:
@@ -64,6 +64,17 @@ class SimonSaysGame:
         for color, pins in HARDWARE_SETUP.items():
             self.leds[color] = LED(pins["led"])
             self.buttons[color] = Button(pins["btn"])
+
+        # Difficulty Buttons
+        self.diff_btns = [] # Keep references
+        for level, pin in DIFFICULTY_BUTTONS.items():
+            try:
+                btn = Button(pin)
+                # Lambda with default arg to capture the current level value
+                btn.when_pressed = lambda l=level: self.set_difficulty(l)
+                self.diff_btns.append(btn)
+            except Exception as e:
+                print(f"Fehler bei Difficulty Button {level} (Pin {pin}): {e}")
             
     def _emit(self, event, data):
         """Hilfsfunktion sendet Daten an Flask"""
@@ -86,6 +97,27 @@ class SimonSaysGame:
     def get_led_snapshot(self):
         """Liefert den aktuell bekannten LED-Zustand für neue Clients."""
         return dict(self.led_states)
+
+    def set_difficulty(self, level):
+        """Ändert den Schwierigkeitsgrad via Hardware-Button"""
+        if level in DIFFICULTY_SETTINGS:
+            print(f"Difficulty changed to: {level}")
+            cfg = DIFFICULTY_SETTINGS[level]
+            self.flash_delay = cfg['flash']
+            self.sequence_pause = cfg['pause']
+            
+            # Feedback ans Frontend
+            self._emit('difficulty_changed', {'level': level})
+            
+            # Akustisches Feedback
+            if hasattr(self, 'buzzer'):
+                try:
+                    # Kurzer Bip
+                    self.buzzer.on()
+                    time.sleep(0.1)
+                    self.buzzer.off()
+                except:
+                    pass
 
     # --- SCHNITTSTELLE ZUM WEB (WICHTIG!) ---
     def process_remote_input(self, color):

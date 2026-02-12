@@ -59,6 +59,13 @@ DIFFICULTY_SETTINGS = {
 }
 
 
+# Physische Knöpfe für Schwierigkeitsgrad
+DIFFICULTY_BUTTONS = {
+    "easy": 12,
+    "medium": 13,
+    "hard": 16
+}
+
 # Datenbank-Konfiguration
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))
