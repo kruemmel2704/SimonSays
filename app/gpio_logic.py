@@ -1,22 +1,47 @@
 import time
 import random
 import threading
-from gpiozero import LED, Button, Buzzer
+from gpiozero import LED, Button, Buzzer, Device
+from gpiozero.exc import BadPinFactory
+from gpiozero.pins.mock import MockFactory
 
 # Wir importieren die Konfiguration
 from app.config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE
+
+
+def ensure_gpio_factory():
+    """Nutzt echte GPIOs auf dem Pi, sonst Mock für lokale/dev Umgebungen."""
+    try:
+        Device.ensure_pin_factory()
+    except BadPinFactory:
+        Device.pin_factory = MockFactory()
+
+
+class SilentBuzzer:
+    """Fallback-Buzzer für Umgebungen ohne echte GPIO-Hardware."""
+    def on(self):
+        pass
+
+    def off(self):
+        pass
 
 class SimonSaysGame:
     def __init__(self, socket_callback=None):
         """
         socket_callback: Funktion, um Daten an das Web-Frontend zu senden.
         """
+        ensure_gpio_factory()
+
         self.sequence = []
         self.leds = {}
         self.buttons = {}
         self.colors = list(HARDWARE_SETUP.keys())
-        self.buzzer = Buzzer(BUZZER_PIN)
         self.socket_callback = socket_callback
+
+        try:
+            self.buzzer = Buzzer(BUZZER_PIN)
+        except Exception:
+            self.buzzer = SilentBuzzer()
         
         # Einstellungen
         self.flash_delay = FLASH_DELAY
