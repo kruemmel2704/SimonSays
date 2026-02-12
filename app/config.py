@@ -8,17 +8,9 @@ IS_RASPI = platform.machine().startswith('arm') or platform.machine().startswith
 # Falls du auf Windows/Mac testest, erzwinge IS_RASPI = False
 if os.name == 'nt': 
     IS_RASPI = False
-
-# MySQL Datenbank Konfiguration
-DB_CONFIG = {
-    'host': 'plesk01.sn-datacom.de',
-    'database': 'bbs_simonsays',
-    'user': 'bbs_simonsays_user',
-    'password': 'Bv6pSqVkyhx13?&z',
-    'port': 3306
-}
-
+ 
 # Definition der GPIO Pins (BCM Nummerierung)
+# Diese Struktur erlaubt es der gpio_logic, dynamisch über Farben zu iterieren.
 HARDWARE_SETUP = {
     "red": {
         "led": 17, 

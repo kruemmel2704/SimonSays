@@ -4,6 +4,3 @@ flask
 flask-sqlalchemy
 flask-socketio
 eventlet
-mysql-connector-python
-python-engineio
-python-socketio

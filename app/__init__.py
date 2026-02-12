@@ -1,7 +1,6 @@
 import threading
 from flask import Flask
 from flask_socketio import SocketIO
-from .database import init_db
 
 # Global verfügbar machen
 socketio = SocketIO()
@@ -34,10 +33,4 @@ def create_app():
     game_thread = threading.Thread(target=game_instance.start_game_loop, daemon=True)
     game_thread.start()
 
-    with app.app_context():
-        try:
-            init_db()
-        except Exception as e:
-            logging.error(f"Datenbank-Initialisierung fehlgeschlagen: {e}")
-    
     return app
