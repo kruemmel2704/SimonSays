@@ -91,6 +91,7 @@
 {% block content %}
 <div class="simon-wrapper">
     <h1 class="mb-4">🎮 Simon Says Remote</h1>
+    <span class="badge bg-info">Angemeldet als: {{ player_name }}</span>
 
     <div class="game-board">
         <div id="btn-red" class="simon-btn" onclick="sendInput('red')"></div>
