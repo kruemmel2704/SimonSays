@@ -8,7 +8,7 @@ from app.config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE
 
 class SimonSaysGame:
     def __init__(self, socket_callback=None):
-        """ 
+        """
         socket_callback: Funktion, um Daten an das Web-Frontend zu senden.
         """
         self.sequence = []
@@ -25,6 +25,7 @@ class SimonSaysGame:
         # WICHTIG: Hier speichern wir Web-Klicks zwischen
         self.remote_input_queue = None
         self.game_running = False
+        self.led_states = {color: 'off' for color in self.colors}
 
         # Hardware initialisieren
         for color, pins in HARDWARE_SETUP.items():
@@ -38,12 +39,17 @@ class SimonSaysGame:
 
     def _set_led_state(self, color, state):
         """Setzt Hardware-LED und spiegelt den Zustand ins Web-Frontend."""
+        led_state = 'on' if state else 'off'
+        self.led_states[color] = led_state
         if state:
             self.leds[color].on()
-            self._emit('led_state', {'color': color, 'state': 'on'})
         else:
             self.leds[color].off()
-            self._emit('led_state', {'color': color, 'state': 'off'})
+        self._emit('led_state', {'color': color, 'state': led_state})
+
+    def get_led_snapshot(self):
+        """Liefert den aktuell bekannten LED-Zustand für neue Clients."""
+        return dict(self.led_states)
 
     # --- SCHNITTSTELLE ZUM WEB (WICHTIG!) ---
     def process_remote_input(self, color):
