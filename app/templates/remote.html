@@ -135,6 +135,27 @@
         statusMsg.className = "text-warning";
     });
 
+
+    socket.on('status', function(data) {
+        if (data && data.msg) {
+            statusMsg.innerText = data.msg;
+            statusMsg.className = "text-success";
+        }
+    });
+
+    socket.on('led_snapshot', function(data) {
+        const states = data && data.states ? data.states : {};
+        ['red', 'green', 'blue', 'yellow'].forEach((color) => {
+            const btn = document.getElementById('btn-' + color);
+            if (!btn) return;
+            if (states[color] === 'on') {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    });
+
     // LIVE-SYNCHRONISATION
     socket.on('led_state', function(data) {
         const btn = document.getElementById('btn-' + data.color);
