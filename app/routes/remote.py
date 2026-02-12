@@ -18,12 +18,12 @@ def handle_remote_input(data):
     color = data.get('color')
     print(f"Web-Input empfangen: {color}")
     
-    # Wir importieren die Variable direkt aus dem Hauptpaket app
     import app
     if app.game_instance:
+        # Wir schicken NUR den Input an die Logik.
+        # Die Logik ruft dann flash_led() auf, was das 'on' UND 'off' Signal 
+        # an alle Browser sendet.
         app.game_instance.process_remote_input(color)
-        # Feedback an alle Browser senden
-        emit('led_state', {'color': color, 'state': 'on'}, broadcast=True, namespace='/remote')
     else:
         print("Fehler: game_instance ist nicht initialisiert!")
 
