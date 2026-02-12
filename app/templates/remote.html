@@ -116,21 +116,27 @@
 
 {% block extra_js %}
 <script>
-    // Verbindung zum Namespace /remote herstellen
-    var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + '/remote');
+    // Nutze eine robustere Verbindungs-Option
+    const socket = io('/remote', {
+        transports: ['websocket', 'polling'],
+        upgrade: true
+    });
 
     const statusMsg = document.getElementById('status-msg');
 
-    // 1. Verbindungsevent
     socket.on('connect', function() {
         console.log("Verbunden mit Pi-Remote");
         statusMsg.innerText = "Bereit zum Start";
         statusMsg.className = "text-success";
     });
 
-    // 2. LIVE-SYNCHRONISATION: Hier empfängt der Browser die LED-Zustände vom Pi
+    socket.on('disconnect', function() {
+        statusMsg.innerText = "Verbindung verloren...";
+        statusMsg.className = "text-warning";
+    });
+
+    // LIVE-SYNCHRONISATION
     socket.on('led_state', function(data) {
-        // data = { "color": "red", "state": "on" }
         const btn = document.getElementById('btn-' + data.color);
         if (btn) {
             if (data.state === 'on') {
@@ -141,40 +147,29 @@
         }
     });
 
-    // 3. Status-Updates (Simon zeigt / Du bist dran)
     socket.on('game_status', function(data) {
         statusMsg.innerText = data.msg;
         statusMsg.className = "text-info";
     });
 
-    // 4. Game Over Handling
     socket.on('game_over', function(data) {
         statusMsg.innerText = "GAME OVER! Score: " + data.score;
         statusMsg.className = "text-danger";
-        
-        // Alle Buttons kurz rot blinken lassen
-        flashAll('red');
+        // Kleiner visueller Effekt bei Game Over
+        document.querySelector('.game-board').style.boxShadow = "0 0 50px rgba(255,0,0,0.5)";
+        setTimeout(() => {
+            document.querySelector('.game-board').style.boxShadow = "0 20px 50px rgba(0,0,0,0.9)";
+        }, 1000);
     });
 
-    // --- FUNKTIONEN ZUM SENDEN AN DEN PI ---
-
     function sendInput(color) {
-        // Wir senden den Klick an den Pi. 
-        // Das Aufleuchten im Browser passiert erst durch 'led_state' vom Server zurück,
-        // so bleibt alles 100% synchron mit der Hardware.
+        // WICHTIG: Hier nur emittieren. 
+        // Das Leuchten kommt EXKLUSIV über das 'led_state' Event vom Pi zurück.
         socket.emit('remote_input', {color: color});
     }
 
     function setDifficulty(level) {
         socket.emit('change_difficulty', {level: level});
-    }
-
-    function flashAll(colorClass) {
-        const btns = document.querySelectorAll('.simon-btn');
-        btns.forEach(b => b.classList.add('active'));
-        setTimeout(() => {
-            btns.forEach(b => b.classList.remove('active'));
-        }, 500);
     }
 </script>
 {% endblock %}
