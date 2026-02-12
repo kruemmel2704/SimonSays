@@ -109,7 +109,6 @@ docker compose logs -f
 <<<<<<< HEAD
 ****Projekt von****: ***Sebastian Scholtysek, Robin Zindler, Lars Krümmel***
 ## 7.Erweiterung
-
-- Un Un Un Un
-
+- Bei der Erweiterung haben wir uns dafür entschieden ein Scoreboard und eine Remoteverbindung zu dem Game zu erstellen und so haben wir das ganze gemacht:
+-
 
