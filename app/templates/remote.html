@@ -4,118 +4,151 @@
 
 {% block extra_css %}
 <style>
-    /* 
-     * KIOSK MODE / FULL SCREEN STYLE 
-     * Zentriert, dunkel, Fokus nur auf dem Spielrad.
+    /*
+     * RESET & BASICS
      */
     body,
     html {
         margin: 0;
         padding: 0;
+        width: 100%;
         height: 100%;
+        background-color: #111;
+        font-family: sans-serif;
         overflow: hidden;
-        /* Scrollbars weg */
-        background-color: #121212;
+        /* No scrollbars */
+        user-select: none;
+        /* No text selection */
     }
 
-    /* Der Container füllt den Bildschirm und zentriert alles */
+    /*
+     * MAIN CONTAINER
+     * Holds the game board centered.
+     */
     .simon-wrapper {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        height: 100vh;
-        width: 100vw;
     }
 
-    /* Das Spielrad */
+    /*
+     * THE GAME BOARD (THE WHEEL)
+     * Fixed aspect ratio, responsive size.
+     */
     .game-board {
         position: relative;
         width: 80vmin;
-        /* 80% der kleineren Bildschirmseite */
+        /* 80% of viewport min dimension */
         height: 80vmin;
         border-radius: 50%;
         background-color: #222;
-        border: 10px solid #333;
+        border: 4px solid #333;
         box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
-        overflow: hidden;
-        /* Damit die Sektoren nicht überstehen */
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr 1fr;
-        gap: 2%;
-        /* Lücke zwischen den Tasten */
-        padding: 2%;
+
+        /* 
+         IMPORTANT: We use a container internal to the board 
+         to hold the absolute positioned buttons.
+        */
         box-sizing: border-box;
     }
 
-    /* Die 4 Farbfelder */
+    /*
+     * THE BUTTONS
+     * Absolute positioning to ensure they form a perfect 4-part circle.
+     * Each button takes up 50% width/height minus a small gap.
+     */
     .simon-btn {
-        width: 100%;
-        height: 100%;
-        opacity: 0.3;
-        /* Standard: dunkel/aus */
-        transition: opacity 0.1s, transform 0.1s;
+        position: absolute;
+        width: 48%;
+        /* 50% minus 2% gap space */
+        height: 48%;
+        opacity: 0.25;
+        transition: opacity 0.1s;
         cursor: pointer;
-        /* Verhindert "Auswählen" beim wilden Klicken */
         -webkit-tap-highlight-color: transparent;
-        user-select: none;
     }
 
-    .simon-btn:active {
-        transform: scale(0.95);
-    }
-
-    /* Farben & Formen */
-    #btn-green {
-        background-color: #00ff00;
-        border-top-right-radius: 100%;
-    }
-
+    /* Positioning the 4 quadrants */
     #btn-red {
+        top: 0;
+        left: 0;
         background-color: #ff0000;
-        border-top-left-radius: 100%;
+        border-top-left-radius: 100% 100%;
+        /* Perfect quarter circle */
     }
 
-    #btn-yellow {
-        background-color: #ffff00;
-        border-bottom-left-radius: 100%;
+    #btn-green {
+        top: 0;
+        right: 0;
+        background-color: #00ff00;
+        border-top-right-radius: 100% 100%;
     }
 
     #btn-blue {
+        bottom: 0;
+        left: 0;
         background-color: #0000ff;
-        border-bottom-right-radius: 100%;
+        border-bottom-left-radius: 100% 100%;
     }
 
-    /* AKTIVER ZUSTAND (LEUCHTEN) */
+    #btn-yellow {
+        bottom: 0;
+        right: 0;
+        background-color: #ffff00;
+        border-bottom-right-radius: 100% 100%;
+    }
+
+    /*
+     * ACTIVE STATE (LIGHT UP)
+     */
     .simon-btn.active {
-        opacity: 1;
-        box-shadow: 0 0 30px currentColor;
-        /* Leuchtet in eigener Farbe */
-        z-index: 10;
-        /* Leuchten soll über andere Elemente strahlen */
+        opacity: 1 !important;
+        box-shadow: 0 0 40px currentColor;
+        /* Glow in its own color */
+        z-index: 100;
     }
 
-    /* Kleiner Verbindungs-Status unten rechts (dezenter Punkt) */
-    #conn-status {
+    /* CENTER CIRCLE (Optional styling to make it look like the toy) */
+    .center-decoration {
         position: absolute;
-        bottom: 20px;
-        right: 20px;
-        width: 10px;
-        height: 10px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 30%;
+        height: 30%;
+        background-color: #111;
         border-radius: 50%;
-        background-color: #333;
-        /* Default: Disconnected */
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        z-index: 50;
+        border: 4px solid #333;
+
+        /* Display connection indicator inside */
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    #conn-status.connected {
+    /* STATUS INDICATOR (The logo/text inside) */
+    #status-indicator {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background-color: #444;
+        /* Grey = connecting */
+        box-shadow: 0 0 5px rgba(255, 255, 255, 0.1);
+        transition: background-color 0.3s;
+    }
+
+    #status-indicator.connected {
         background-color: #00ff00;
         box-shadow: 0 0 10px #00ff00;
     }
 
-    #conn-status.disconnected {
+    #status-indicator.disconnected {
         background-color: #ff0000;
+        box-shadow: 0 0 10px #ff0000;
     }
 </style>
 {% endblock %}
@@ -123,133 +156,132 @@
 {% block content %}
 <div class="simon-wrapper">
     <div class="game-board">
-        <!-- Reihenfolge im Grid beachten: -->
-        <!-- Oben Links: Rot -->
         <div id="btn-red" class="simon-btn" data-color="red"></div>
-        <!-- Oben Rechts: Grün -->
         <div id="btn-green" class="simon-btn" data-color="green"></div>
-        <!-- Unten Links: Blau -->
         <div id="btn-blue" class="simon-btn" data-color="blue"></div>
-        <!-- Unten Rechts: Gelb -->
         <div id="btn-yellow" class="simon-btn" data-color="yellow"></div>
-    </div>
 
-    <!-- Dezenter Verbindungs-Indikator -->
-    <div id="conn-status" title="Status"></div>
+        <div class="center-decoration">
+            <div id="status-indicator" title="Connection Status"></div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<!-- Socket.IO loaded from CDN to ensure we have a working client -->
+<script src="https://cdn.socket.io/4.6.0/socket.io.min.js"
+    integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+"
+    crossorigin="anonymous"></script>
+
 <script>
     document.addEventListener("DOMContentLoaded", () => {
-        // Verbindung zum Namespace /remote herstellen
-        const socket = io('/remote', {
-            transports: ['websocket', 'polling'], // Websocket bevorzugen
-            reconnection: true,
-            reconnectionDelay: 500,
-            reconnectionAttempts: Infinity
-        });
-
-        const statusDot = document.getElementById('conn-status');
-        const buttons = {
+        // --- 1. SETUP ---
+        const STATUS_DOT = document.getElementById('status-indicator');
+        const BUTTONS = {
             red: document.getElementById('btn-red'),
             green: document.getElementById('btn-green'),
             blue: document.getElementById('btn-blue'),
             yellow: document.getElementById('btn-yellow')
         };
 
-        // --- HILFSFUNKTIONEN ---
+        // --- 2. SOCKET CONNECTION ---
+        // Connect specifically to the /remote namespace
+        const socket = io('/remote', {
+            transports: ['websocket', 'polling']
+        });
 
-        function setLedColor(color, isOn) {
-            const btn = buttons[color];
-            if (btn) {
-                if (isOn) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            }
-        }
-
-        function updateAll(states) {
-            if (!states) return;
-            for (const [color, state] of Object.entries(states)) {
-                setLedColor(color, state === 'on' || state === true);
-            }
-        }
-
-        // --- SOCKET EVENT LISTENER ---
+        // --- 3. EVENT HANDLERS ---
 
         socket.on('connect', () => {
-            console.log('Verunden mit /remote');
-            statusDot.classList.remove('disconnected');
-            statusDot.classList.add('connected');
-            // Sofort Update anfordern
+            console.log("Remote: Connected to server.");
+            STATUS_DOT.classList.remove('disconnected');
+            STATUS_DOT.classList.add('connected');
+
+            // Immediately ask for current state
             socket.emit('request_led_snapshot');
         });
 
         socket.on('disconnect', () => {
-            console.log('Verbindung verloren');
-            statusDot.classList.remove('connected');
-            statusDot.classList.add('disconnected');
+            console.warn("Remote: Disconnected from server.");
+            STATUS_DOT.classList.remove('connected');
+            STATUS_DOT.classList.add('disconnected');
         });
 
-        // 1. EVENT: Einzelne LED ändert sich (Echtzeit)
+        socket.on('connect_error', (err) => {
+            console.error("Remote: Connection Error:", err);
+            STATUS_DOT.classList.remove('connected');
+            STATUS_DOT.classList.add('disconnected');
+        });
+
+        // --- 4. GAME LOGIC ---
+
+        function setLight(color, isOn) {
+            const btn = BUTTONS[color];
+            if (!btn) return;
+
+            if (isOn) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        }
+
+        // Handle single updates (Realtime)
         socket.on('led_state', (data) => {
-            // data = {color: 'red', state: 'on'}
+            // Expecting: {color: 'red', state: 'on'/'off' or true/false}
+            console.log("Remote: Event 'led_state'", data);
             if (data && data.color) {
                 const isOn = (data.state === 'on' || data.state === true);
-                setLedColor(data.color, isOn);
+                setLight(data.color, isOn);
             }
         });
 
-        // 2. EVENT: Komplettes Update (z.B. beim Neuladen)
+        // Handle bulk updates (Snapshots)
         socket.on('led_snapshot', (data) => {
-            // data = {states: {red: 'off', green: 'on', ...}}
-            if (data && data.states) {
-                updateAll(data.states);
+            console.log("Remote: Event 'led_snapshot'", data);
+            const states = (data && data.states) ? data.states : {};
+
+            ['red', 'green', 'blue', 'yellow'].forEach(color => {
+                const val = states[color];
+                const isOn = (val === 'on' || val === true);
+                setLight(color, isOn);
+            });
+        });
+
+
+        // --- 5. INTERACTION ---
+
+        function handleInput(e) {
+            // Prevent zooming or scrolling
+            e.preventDefault();
+
+            const color = this.getAttribute('data-color');
+            if (socket.connected && color) {
+                console.log(`Remote: Sending input '${color}'`);
+                socket.emit('remote_input', { color: color });
+
+                // Optional: Instant local feedback (visual only)
+                // setLight(color, true);
+                // setTimeout(() => setLight(color, false), 200);
             }
+        }
+
+        Object.values(BUTTONS).forEach(btn => {
+            // Support both Touch and Mouse
+            btn.addEventListener('touchstart', handleInput, { passive: false });
+            btn.addEventListener('mousedown', handleInput);
         });
 
-        // 3. EVENT: Game Over (Optional: Alles kurz rot blinken lassen)
-        socket.on('game_over', () => {
-            document.querySelector('.game-board').style.borderColor = 'red';
-            setTimeout(() => {
-                document.querySelector('.game-board').style.borderColor = '#333';
-            }, 500);
-        });
-
-
-        // --- POLLING / WATCHDOG (Für Robustheit) ---
-        // Fragt alle 500ms aktiv nach dem Status, falls ein Paket verloren ging
+        // --- 6. WATCHDOG (Polling) ---
+        // Every 500ms, ask server "How do the lights look?" 
+        // This fixes missed packets.
         setInterval(() => {
             if (socket.connected) {
                 socket.emit('request_led_snapshot');
             }
-        }, 500); // 2x pro Sekunde syncen
+        }, 500);
 
-
-        // --- INTERAKTION (Mausklick / Touch) ---
-        // Sendet Eingaben an den Server
-        Object.values(buttons).forEach(btn => {
-            btn.addEventListener('mousedown', sendClick);
-            btn.addEventListener('touchstart', sendClick);
-        });
-
-        function sendClick(e) {
-            e.preventDefault(); // Verhindert z.B. Zoom auf Tatsch
-            const color = this.getAttribute('data-color');
-            if (socket.connected && color) {
-                socket.emit('remote_input', { color: color });
-
-                // Visuelles Feedback sofort (für bessere Responsiveness)
-                // Der Server schickt zwar ein 'led_state', aber lokal wirkt es schneller.
-                // Wir lassen es nur kurz aufleuchten.
-                // (Optional: Wenn der Server-Logic das Licht steuert, kann man das hier weglassen,
-                // damit man sieht, was der Server "denkt".)
-            }
-        }
     });
 </script>
 {% endblock %}
