@@ -1,4 +1,3 @@
-import threading
 from flask import Flask
 from flask_socketio import SocketIO
 
@@ -29,8 +28,7 @@ def create_app():
     # Instanz erstellen
     game_instance = SimonSaysGame(socket_callback=game_socket_callback)
 
-    # Hardware-Thread starten
-    game_thread = threading.Thread(target=game_instance.start_game_loop, daemon=True)
-    game_thread.start()
+    # Hardware-Loop als SocketIO-Background-Task starten
+    socketio.start_background_task(game_instance.start_game_loop)
 
     return app
