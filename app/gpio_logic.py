@@ -36,6 +36,15 @@ class SimonSaysGame:
         if self.socket_callback:
             self.socket_callback(event, data)
 
+    def _set_led_state(self, color, state):
+        """Setzt Hardware-LED und spiegelt den Zustand ins Web-Frontend."""
+        if state:
+            self.leds[color].on()
+            self._emit('led_state', {'color': color, 'state': 'on'})
+        else:
+            self.leds[color].off()
+            self._emit('led_state', {'color': color, 'state': 'off'})
+
     # --- SCHNITTSTELLE ZUM WEB (WICHTIG!) ---
     def process_remote_input(self, color):
         """Wird von remote.py aufgerufen, wenn jemand im Browser klickt"""
@@ -48,11 +57,8 @@ class SimonSaysGame:
     # --- HARDWARE STEUERUNG ---
     def flash_led(self, color):
         """Lässt LED leuchten und synchronisiert das Web-Frontend"""
-        # 1. Web-Signal: LICHT AN
-        self._emit('led_state', {'color': color, 'state': 'on'})
-        
-        # 2. Hardware schalten
-        self.leds[color].on()
+        # 1. Hardware + Web: LICHT AN
+        self._set_led_state(color, True)
         # Sicherstellen, dass der Buzzer nur genutzt wird, wenn er initialisiert wurde
         if hasattr(self, 'buzzer'):
             try:
@@ -62,16 +68,14 @@ class SimonSaysGame:
         
         time.sleep(self.flash_delay)
         
-        # 3. Hardware aus
-        self.leds[color].off()
+        # 2. Hardware aus
+        self._set_led_state(color, False)
         if hasattr(self, 'buzzer'):
             try:
                 self.buzzer.off()
             except:
                 pass
-        
-        # 4. Web-Signal: LICHT AUS
-        self._emit('led_state', {'color': color, 'state': 'off'})
+
         time.sleep(self.sequence_pause)
 
     def play_sequence(self):
@@ -132,10 +136,12 @@ class SimonSaysGame:
         # 3x Blinken und Piepen
         for _ in range(3):
             self.buzzer.on()
-            for led in self.leds.values(): led.on()
+            for color in self.colors:
+                self._set_led_state(color, True)
             time.sleep(0.3)
             self.buzzer.off()
-            for led in self.leds.values(): led.off()
+            for color in self.colors:
+                self._set_led_state(color, False)
             time.sleep(0.3)
 
     def wait_for_start_with_wave(self):
@@ -147,7 +153,7 @@ class SimonSaysGame:
         
         while True:
             for color in wave:
-                self.leds[color].on()
+                self._set_led_state(color, True)
                 
                 # Kurze Pause, in der wir auf Start-Signale prüfen
                 end_time = time.time() + 0.1
@@ -155,20 +161,22 @@ class SimonSaysGame:
                     # 1. Hardware Start?
                     for btn in self.buttons.values():
                         if btn.is_pressed:
-                            for l in self.leds.values(): l.off()
+                            for wave_color in self.colors:
+                                self._set_led_state(wave_color, False)
                             time.sleep(0.5)
                             return
                     
                     # 2. Web Start?
                     if self.remote_input_queue:
                         self.remote_input_queue = None
-                        for l in self.leds.values(): l.off()
+                        for wave_color in self.colors:
+                            self._set_led_state(wave_color, False)
                         time.sleep(0.5)
                         return
                     
                     time.sleep(0.01)
                 
-                self.leds[color].off()
+                self._set_led_state(color, False)
 
     def start_game_loop(self):
         """Die Hauptschleife (läuft im Hintergrund-Thread)"""
