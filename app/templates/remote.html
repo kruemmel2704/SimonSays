@@ -21,7 +21,7 @@
         background: radial-gradient(circle, #333333 0%, #111111 100%);
         border-radius: 50%;
         border: 12px solid #1a1a1a;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
         position: relative;
     }
 
@@ -31,15 +31,30 @@
         cursor: default;
         opacity: 0.25;
         transition: all 0.1s ease-in-out;
-        border: 4px solid rgba(0,0,0,0.4);
+        border: 4px solid rgba(0, 0, 0, 0.4);
         position: relative;
     }
 
     /* Formgebung der Sektoren */
-    #btn-red { background-color: #ff0000; border-top-left-radius: 100% 100%; }
-    #btn-green { background-color: #00ff00; border-top-right-radius: 100% 100%; }
-    #btn-blue { background-color: #0000ff; border-bottom-left-radius: 100% 100%; }
-    #btn-yellow { background-color: #ffff00; border-bottom-right-radius: 100% 100%; }
+    #btn-red {
+        background-color: #ff0000;
+        border-top-left-radius: 100% 100%;
+    }
+
+    #btn-green {
+        background-color: #00ff00;
+        border-top-right-radius: 100% 100%;
+    }
+
+    #btn-blue {
+        background-color: #0000ff;
+        border-bottom-left-radius: 100% 100%;
+    }
+
+    #btn-yellow {
+        background-color: #ffff00;
+        border-bottom-right-radius: 100% 100%;
+    }
 
     /* Glow-Effekte im aktiven Zustand (gesteuert via Pi) */
     #btn-red.active {
@@ -47,16 +62,19 @@
         box-shadow: 0 0 50px #ff0000, inset 0 0 25px #ff6666;
         transform: scale(0.98);
     }
+
     #btn-green.active {
         opacity: 1;
         box-shadow: 0 0 50px #00ff00, inset 0 0 25px #66ff66;
         transform: scale(0.98);
     }
+
     #btn-blue.active {
         opacity: 1;
         box-shadow: 0 0 50px #0000ff, inset 0 0 25px #6666ff;
         transform: scale(0.98);
     }
+
     #btn-yellow.active {
         opacity: 1;
         box-shadow: 0 0 50px #ffff00, inset 0 0 25px #ffff66;
@@ -117,143 +135,115 @@
 {% block extra_js %}
 <script>
     (function () {
-    // Wenn socket.io client nicht geladen ist, sauber abbrechen (verhindert "weiße Seite" durch JS-Fehler)
-    if (typeof io === 'undefined') {
-        const statusMsg = document.getElementById('status-msg');
-        if (statusMsg) {
-            statusMsg.innerText = "Socket.IO Client fehlt (/socket.io/socket.io.js)";
-            statusMsg.className = "text-danger";
+        // Wenn socket.io client nicht geladen ist, sauber abbrechen (verhindert "weiße Seite" durch JS-Fehler)
+        if (typeof io === 'undefined') {
+            const statusMsg = document.getElementById('status-msg');
+            if (statusMsg) {
+                statusMsg.innerText = "Socket.IO Client fehlt (/socket.io/socket.io.js)";
+                statusMsg.className = "text-danger";
+            }
+            console.error("Socket.IO client (io) is undefined. Stelle sicher, dass /socket.io/socket.io.js geladen wird.");
+            return;
         }
-        console.error("Socket.IO client (io) is undefined. Stelle sicher, dass /socket.io/socket.io.js geladen wird.");
-        return;
-    }
 
-    // Nutze eine robustere Verbindungs-Option
-    const socket = io('/remote', {
-        transports: ['polling', 'websocket'],
-        upgrade: true,
-        reconnection: true,
-        reconnectionAttempts: Infinity,
-        reconnectionDelay: 1000
-    });
-
-    const statusMsg = document.getElementById('status-msg');
-
-    const COLORS = ['red', 'green', 'blue', 'yellow'];
-    let lastUpdateTs = 0;
-
-    const currentState = { red: 'off', green: 'off', blue: 'off', yellow: 'off' };
-
-    function applyLedState(color, state) {
-        const btn = document.getElementById('btn-' + color);
-        if (!btn) return;
-
-        const normalized = (state === 'on') ? 'on' : 'off';
-        if (currentState[color] === normalized) return;
-
-        currentState[color] = normalized;
-        btn.classList.toggle('active', normalized === 'on');
-        lastUpdateTs = Date.now();
-    }
-
-    function applySnapshot(states) {
-        const s = states || {};
-        COLORS.forEach((color) => {
-            applyLedState(color, s[color] === 'on' ? 'on' : 'off');
+        // Nutze eine robustere Verbindungs-Option
+        const socket = io('/remote', {
+            transports: ['polling', 'websocket'],
+            upgrade: true,
+            reconnection: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 1000
         });
-        lastUpdateTs = Date.now();
-    }
 
-    function requestLedSnapshot() {
-        if (socket.connected) {
-            socket.emit('request_led_snapshot');
-        }
-    }
+        const statusMsg = document.getElementById('status-msg');
 
-    socket.on('connect', function() {
-        console.log("Verbunden mit Pi-Remote");
-        if (statusMsg) {
-            statusMsg.innerText = "Bereit zum Start";
-            statusMsg.className = "text-success";
-        }
-        requestLedSnapshot();
-    });
+        const COLORS = ['red', 'green', 'blue', 'yellow'];
+        let lastUpdateTs = 0;
 
-    socket.on('disconnect', function() {
-        if (statusMsg) {
-            statusMsg.innerText = "Verbindung verloren...";
-            statusMsg.className = "text-warning";
-        }
-    });
+        const currentState = { red: 'off', green: 'off', blue: 'off', yellow: 'off' };
 
-    socket.on('connect_error', function(err) {
-        console.warn('Socket connect_error:', err && err.message ? err.message : err);
-        if (statusMsg) {
-            statusMsg.innerText = "Verbindungsproblem...";
-            statusMsg.className = "text-warning";
-        }
-    });
+        function applyLedState(color, state) {
+            const btn = document.getElementById('btn-' + color);
+            if (!btn) return;
 
-    socket.on('reconnect', function() {
-        if (statusMsg) {
-            statusMsg.innerText = "Wieder verbunden";
-            statusMsg.className = "text-success";
-        }
-        requestLedSnapshot();
-    });
+            const normalized = (state === 'on') ? 'on' : 'off';
+            if (currentState[color] === normalized) return;
 
-    socket.on('status', function(data) {
-        if (data && data.msg && statusMsg) {
-            statusMsg.innerText = data.msg;
-            statusMsg.className = "text-success";
+            currentState[color] = normalized;
+            btn.classList.toggle('active', normalized === 'on');
+            lastUpdateTs = Date.now();
         }
-    });
 
-    socket.on('led_snapshot', function(data) {
-        const states = data && data.states ? data.states : {};
-        applySnapshot(states);
-    });
+        function applySnapshot(states) {
+            const s = states || {};
+            COLORS.forEach((color) => {
+                applyLedState(color, s[color] === 'on' ? 'on' : 'off');
+            });
+            lastUpdateTs = Date.now();
+        }
 
-    // LIVE-SYNCHRONISATION (Event-basiert)
-    socket.on('led_state', function(data) {
-        if (data && data.color) {
-            applyLedState(data.color, data.state);
+        function requestLedSnapshot() {
+            if (socket.connected) {
+                socket.emit('request_led_snapshot');
+            }
         }
-    });
 
-    socket.on('game_status', function(data) {
-        if (statusMsg && data && data.msg) {
-            statusMsg.innerText = data.msg;
-            statusMsg.className = "text-info";
-        }
-    });
-
-    socket.on('game_over', function(data) {
-        if (statusMsg) {
-            statusMsg.innerText = "GAME OVER! Score: " + (data && typeof data.score !== 'undefined' ? data.score : '?');
-            statusMsg.className = "text-danger";
-        }
-        const board = document.querySelector('.game-board');
-        if (board) {
-            board.style.boxShadow = "0 0 50px rgba(255,0,0,0.5)";
-            setTimeout(() => {
-                board.style.boxShadow = "0 20px 50px rgba(0,0,0,0.9)";
-            }, 1000);
-        }
-    });
- 
-    // Watchdog: Snapshot nur nachziehen, wenn Events ausbleiben
-    setInterval(() => {
-        if (!socket.connected) return;
-        if (Date.now() - lastUpdateTs > 2500) {
+        socket.on('connect', function () {
+            console.log("Verbunden mit Pi-Remote");
             requestLedSnapshot();
-        }
-    }, 500);
+        });
 
-    // Global, weil onclick="setDifficulty('easy')" es braucht
-    window.setDifficulty = function(level) {
-        socket.emit('change_difficulty', {level: level});
-    };
-})();
+        socket.on('disconnect', function () {
+            // Status updates entfernt
+        });
+
+        socket.on('connect_error', function (err) {
+            console.warn('Socket connect_error:', err && err.message ? err.message : err);
+        });
+
+        socket.on('reconnect', function () {
+            requestLedSnapshot();
+        });
+
+        // status listener entfernt
+
+        socket.on('led_snapshot', function (data) {
+            const states = data && data.states ? data.states : {};
+            applySnapshot(states);
+        });
+
+        // LIVE-SYNCHRONISATION (Event-basiert)
+        socket.on('led_state', function (data) {
+            if (data && data.color) {
+                applyLedState(data.color, data.state);
+            }
+        });
+
+        // game_status listener entfernt
+
+        socket.on('game_over', function (data) {
+            // Text update entfernt
+            const board = document.querySelector('.game-board');
+            if (board) {
+                board.style.boxShadow = "0 0 50px rgba(255,0,0,0.5)";
+                setTimeout(() => {
+                    board.style.boxShadow = "0 20px 50px rgba(0,0,0,0.9)";
+                }, 1000);
+            }
+        });
+
+        // Watchdog: Snapshot nur nachziehen, wenn Events ausbleiben
+        setInterval(() => {
+            if (!socket.connected) return;
+            if (Date.now() - lastUpdateTs > 2500) {
+                requestLedSnapshot();
+            }
+        }, 500);
+
+        // Global, weil onclick="setDifficulty('easy')" es braucht
+        window.setDifficulty = function (level) {
+            socket.emit('change_difficulty', { level: level });
+        };
+    })();
 </script>
 {% endblock %}
