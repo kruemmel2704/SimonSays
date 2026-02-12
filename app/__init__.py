@@ -26,11 +26,15 @@ def create_app():
     def game_socket_callback(event, data):
         socketio.emit(event, data, namespace='/remote')
 
-    # Instanz erstellen
-    game_instance = SimonSaysGame(socket_callback=game_socket_callback)
+    try:
+        # Instanz erstellen
+        game_instance = SimonSaysGame(socket_callback=game_socket_callback)
 
-    # Hardware-Thread starten
-    game_thread = threading.Thread(target=game_instance.start_game_loop, daemon=True)
-    game_thread.start()
+        # Hardware-Thread starten
+        game_thread = threading.Thread(target=game_instance.start_game_loop, daemon=True)
+        game_thread.start()
+    except Exception as exc:
+        game_instance = None
+        app.logger.exception("SimonSays Hardware konnte nicht initialisiert werden: %s", exc)
 
     return app
