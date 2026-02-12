@@ -1,16 +1,42 @@
 import time
 import random
 import threading
-from gpiozero import LED, Button, Buzzer
+import platform
 
 # Wir importieren die Konfiguration
 from app.config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE
 
+# --- AUTOMATISCHE HARDWARE-ERKENNUNG & EMULATION ---
+try:
+    from gpiozero import LED, Button, Buzzer
+    # Teste ob wir wirklich Hardware-Zugriff haben
+    test_buzzer = Buzzer(BUZZER_PIN)
+    IS_HARDWARE = True
+    print("SIMON SAYS: Echte Hardware erkannt.")
+except (ImportError, Exception):
+    IS_HARDWARE = False
+    print("SIMON SAYS: Keine Hardware gefunden. Emulations-Modus aktiv.")
+
+    # Dummy-Klassen für den PC-Modus
+    class LED:
+        def __init__(self, pin): self.pin = pin
+        def on(self): pass
+        def off(self): pass
+
+    class Buzzer:
+        def __init__(self, pin): self.pin = pin
+        def on(self): pass
+        def off(self): pass
+
+    class Button:
+        def __init__(self, pin): self.pin = pin
+        @property
+        def is_pressed(self): return False # Web-Input wird separat gehandelt
+
+# ---------------------------------------------------
+
 class SimonSaysGame:
     def __init__(self, socket_callback=None):
-        """
-        socket_callback: Funktion, um Daten an das Web-Frontend zu senden.
-        """
         self.sequence = []
         self.leds = {}
         self.buttons = {}
@@ -18,98 +44,84 @@ class SimonSaysGame:
         self.buzzer = Buzzer(BUZZER_PIN)
         self.socket_callback = socket_callback
         
-        # Einstellungen
         self.flash_delay = FLASH_DELAY
         self.sequence_pause = SEQUENCE_PAUSE
         
-        # WICHTIG: Hier speichern wir Web-Klicks zwischen
         self.remote_input_queue = None
         self.game_running = False
 
-        # Hardware initialisieren
         for color, pins in HARDWARE_SETUP.items():
             self.leds[color] = LED(pins["led"])
             self.buttons[color] = Button(pins["btn"])
             
     def _emit(self, event, data):
-        """Hilfsfunktion sendet Daten an Flask"""
         if self.socket_callback:
             self.socket_callback(event, data)
 
-    # --- SCHNITTSTELLE ZUM WEB (WICHTIG!) ---
     def process_remote_input(self, color):
-        """Wird von remote.py aufgerufen, wenn jemand im Browser klickt"""
+        """Wird aufgerufen, wenn im Web-Interface geklickt wird"""
         if color in self.colors:
-            print(f"Game-Logik empfängt Web-Input: {color}")
+            print(f"INPUT: Web-Klick für {color}")
             self.remote_input_queue = color
-        else:
-            print(f"Ignoriere unbekannte Farbe: {color}")
 
-    # --- HARDWARE STEUERUNG ---
-    def flash_led(self, color):
-        self._emit('led_state', {'color': color, 'state': 'on'}) # Browser schaltet Licht an
+    def flash_led(self, color, is_player=False):
+        """Lässt LED leuchten und synchronisiert das Web-Interface"""
+        # 1. Web: Licht AN
+        self._emit('led_state', {'color': color, 'state': 'on'})
+        
+        # 2. Hardware: AN
         self.leds[color].on()
-        time.sleep(self.flash_delay)
+        self.buzzer.on()
+        
+        # Zeit abwarten (Spieler-Klicks sind meist kürzer für besseres Gefühl)
+        duration = self.flash_delay if not is_player else 0.2
+        time.sleep(duration)
+        
+        # 3. Hardware: AUS
         self.leds[color].off()
-        self._emit('led_state', {'color': color, 'state': 'off'}) # Browser schaltet Licht aus
+        self.buzzer.off()
+        
+        # 4. Web: Licht AUS
+        self._emit('led_state', {'color': color, 'state': 'off'})
         time.sleep(self.sequence_pause)
 
     def play_sequence(self):
-        """Spielt die aktuelle Folge ab"""
         self._emit('game_status', {'msg': 'Simon zeigt...'})
-        time.sleep(1)
+        time.sleep(0.5)
         for color in self.sequence:
             self.flash_led(color)
 
     def wait_for_any_button(self):
-        """
-        Der Kern der Hybrid-Steuerung:
-        Wartet auf Hardware-Button ODER Web-Input.
-        """
-        # Queue leeren vor neuer Eingabe
         self.remote_input_queue = None
-        
         while True:
-            # A) Check Hardware Buttons
-            for color, btn in self.buttons.items():
-                if btn.is_pressed:
-                    # Entprellen (warten bis losgelassen)
-                    while btn.is_pressed:
-                        time.sleep(0.01)
-                    return color
+            # A) Check Hardware (nur wenn vorhanden)
+            if IS_HARDWARE:
+                for color, btn in self.buttons.items():
+                    if btn.is_pressed:
+                        while btn.is_pressed: time.sleep(0.01)
+                        return color
 
-            # B) Check Web Input
+            # B) Check Web Input (immer aktiv)
             if self.remote_input_queue:
                 color = self.remote_input_queue
-                self.remote_input_queue = None # Reset
+                self.remote_input_queue = None 
                 return color
             
-            # CPU schonen
-            time.sleep(0.01)
+            time.sleep(0.02)
 
     def get_player_input(self):
-        """Prüft die Eingabe des Spielers"""
         self._emit('game_status', {'msg': 'Du bist dran!'})
-        
         for expected_color in self.sequence:
-            # Warten auf Eingabe (Egal ob Web oder Button)
             pressed_color = self.wait_for_any_button()
-            
             if pressed_color == expected_color:
-                # Richtig: Feedback geben (LED leuchtet kurz)
-                self.flash_led(pressed_color)
+                self.flash_led(pressed_color, is_player=True)
             else:
-                # Falsch: Game Over
                 return False
         return True
 
     def game_over_signal(self):
-        """Spielende Animation"""
         score = len(self.sequence)
-        print(f"Game Over. Score: {score}")
         self._emit('game_over', {'score': score})
-        
-        # 3x Blinken und Piepen
         for _ in range(3):
             self.buzzer.on()
             for led in self.leds.values(): led.on()
@@ -119,60 +131,39 @@ class SimonSaysGame:
             time.sleep(0.3)
 
     def wait_for_start_with_wave(self):
-        """Warte-Animation bis jemand drückt (Start)"""
-        self._emit('game_status', {'msg': 'Drücke eine Taste zum Starten'})
-        wave = self.colors + self.colors[-2:0:-1]
-        
-        self.remote_input_queue = None # Reset
+        self._emit('game_status', {'msg': 'Warte auf Start...'})
+        wave = self.colors + self.colors[::-1]
+        self.remote_input_queue = None
         
         while True:
             for color in wave:
                 self.leds[color].on()
-                
-                # Kurze Pause, in der wir auf Start-Signale prüfen
-                end_time = time.time() + 0.1
-                while time.time() < end_time:
-                    # 1. Hardware Start?
-                    for btn in self.buttons.values():
-                        if btn.is_pressed:
-                            for l in self.leds.values(): l.off()
-                            time.sleep(0.5)
-                            return
-                    
-                    # 2. Web Start?
-                    if self.remote_input_queue:
-                        self.remote_input_queue = None
-                        for l in self.leds.values(): l.off()
-                        time.sleep(0.5)
-                        return
-                    
-                    time.sleep(0.01)
-                
+                # Während die LED am Pi leuchtet, prüfen wir auf Klicks
+                start_check = time.time() + 0.15
+                while time.time() < start_check:
+                    if IS_HARDWARE:
+                        for btn in self.buttons.values():
+                            if btn.is_pressed: return self._stop_wave()
+                    if self.remote_input_queue: return self._stop_wave()
+                    time.sleep(0.02)
                 self.leds[color].off()
 
+    def _stop_wave(self):
+        for l in self.leds.values(): l.off()
+        self.remote_input_queue = None
+        time.sleep(0.5)
+
     def start_game_loop(self):
-        """Die Hauptschleife (läuft im Hintergrund-Thread)"""
-        print("Hardware-Thread gestartet...")
         while True:
-            # 1. Warten auf Start
             self.wait_for_start_with_wave()
-            
-            # 2. Spiel beginnt
             self.sequence = []
             self.game_running = True
-            self._emit('game_status', {'msg': 'Spiel startet!'})
             time.sleep(1)
-
             while self.game_running:
-                # Neue Farbe dazu
                 self.sequence.append(random.choice(self.colors))
-                
-                # Simon zeigt
                 self.play_sequence()
-                
-                # Spieler ist dran
                 if not self.get_player_input():
                     self.game_over_signal()
                     self.game_running = False
                 else:
-                    time.sleep(0.5)
+                    time.sleep(0.8)

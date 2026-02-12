@@ -2,3 +2,6 @@
 /LED.py
 /__pycache__
 /test_btn.py
+.venv
+app/__pycache__/__init__.cpython-313.pyc
+app/__pycache__/__init__.cpython-314.pyc

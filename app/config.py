@@ -1,5 +1,13 @@
 # app/config.py
+import platform
+import os
 from gpiozero import LED, Button, Buzzer
+
+IS_RASPI = platform.machine().startswith('arm') or platform.machine().startswith('aarch64')
+
+# Falls du auf Windows/Mac testest, erzwinge IS_RASPI = False
+if os.name == 'nt': 
+    IS_RASPI = False
  
 # Definition der GPIO Pins (BCM Nummerierung)
 # Diese Struktur erlaubt es der gpio_logic, dynamisch über Farben zu iterieren.
