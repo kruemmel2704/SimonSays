@@ -1,13 +1,18 @@
 # app/config.py
 import platform
 import os
-from gpiozero import LED, Button, Buzzer
 
+# Setze Pin Factory auf Mock, BEVOR gpiozero importiert wird oder Hardware initialisiert wird
 IS_RASPI = platform.machine().startswith('arm') or platform.machine().startswith('aarch64')
-
-# Falls du auf Windows/Mac testest, erzwinge IS_RASPI = False
 if os.name == 'nt': 
     IS_RASPI = False
+
+if not IS_RASPI:
+    # Dies verhindert, dass gpiozero nach RPi.GPIO sucht und abstürzt
+    os.environ['GPIOZERO_PIN_FACTORY'] = 'mock'
+    # os.environ['GPIOZERO_PIN_FACTORY'] = 'native' # Alternative falls mock zickt
+
+from gpiozero import LED, Button, Buzzer
  
 # Definition der GPIO Pins (BCM Nummerierung)
 # Diese Struktur erlaubt es der gpio_logic, dynamisch über Farben zu iterieren.
@@ -53,5 +58,9 @@ DIFFICULTY_SETTINGS = {
     }
 }
 
-# Pfad zur Highscore-Datei (wird im Docker-Container in /app/ gespeichert)
-HIGHSCORE_FILE = "highscores.json"
+
+# Datenbank-Konfiguration
+import os
+basedir = os.path.abspath(os.path.dirname(__file__))
+SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'simon.db')
+SQLALCHEMY_TRACK_MODIFICATIONS = False

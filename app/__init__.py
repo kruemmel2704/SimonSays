@@ -1,18 +1,23 @@
 import threading
 from flask import Flask
 from flask_socketio import SocketIO
+from flask_sqlalchemy import SQLAlchemy
 
 # Global verfügbar machen
 socketio = SocketIO()
+db = SQLAlchemy()
 game_instance = None
 
 def create_app():
     global game_instance
     app = Flask(__name__)
+    app.config.from_object('app.config')
     app.config['SECRET_KEY'] = 'simon_secret_key'
 
-    # SocketIO initialisieren
-    socketio.init_app(app, cors_allowed_origins="*")
+    # Extensions initialisieren
+    db.init_app(app)
+    # Wir erzwingen 'threading' mode, da wir manuell Threads starten und eventlet Konflikte verursacht
+    socketio.init_app(app, cors_allowed_origins="*", async_mode="threading")
 
     # Blueprints registrieren
     from app.routes.main import main_bp
@@ -20,14 +25,26 @@ def create_app():
     app.register_blueprint(main_bp)
     app.register_blueprint(remote_bp)
 
+    # Datenbankmodelle laden und Tabellen erstellen
+    with app.app_context():
+        from app import models
+        db.create_all()
+
     # WICHTIG: Import hier, um Zirkelbezüge zu vermeiden
     from app.gpio_logic import SimonSaysGame
 
     def game_socket_callback(event, data):
-        socketio.emit(event, data, namespace='/remote')
+        try:
+            with app.app_context():
+                # print(f"DEBUG: Broadcasting event '{event}' (Data: {data})")
+                socketio.emit(event, data, namespace='/remote')
+                socketio.emit(event, data) # Default namespace (broadcast implied if not in request)
+        except Exception as e:
+            print(f"ERROR inside game_socket_callback: {e}")
 
     try:
         # Instanz erstellen
+        # Wir übergeben hier auch die app, falls nötig, aber besser ist app_context
         game_instance = SimonSaysGame(socket_callback=game_socket_callback)
 
         # Hardware-Thread starten

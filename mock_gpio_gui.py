@@ -19,16 +19,15 @@ class GPIOEmulator:
         self.buttons = {}
         self.buzzer = None
         self.running = False
+        self.pending_actions = []
 
     def start(self):
+        # Do not start a thread. We will run the GUI in the main thread explicitly.
         self.running = True
-        self.thread = threading.Thread(target=self._run_gui, daemon=True)
-        self.thread.start()
-        # Wait for GUI to be ready
-        while self.root is None:
-            time.sleep(0.1)
+        # Actions will be queued until run() is called
 
-    def _run_gui(self):
+    def run(self):
+        """Must be called from the main thread"""
         self.root = tk.Tk()
         self.root.title("GPIO Emulator")
         self.root.geometry("300x500")
@@ -38,11 +37,25 @@ class GPIOEmulator:
         self.main_frame = tk.Frame(self.root)
         self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        self.root.mainloop()
+        # Process queued actions
+        self._process_queues()
+        
+        try:
+            self.root.mainloop()
+        except KeyboardInterrupt:
+            self.root.destroy()
+
+    def _process_queues(self):
+        # Execute all pending widget creations
+        for action in self.pending_actions:
+            action()
+        self.pending_actions.clear()
 
     def add_led(self, pin, name=None):
         if self.root:
             self.root.after(0, lambda: self._create_led_widget(pin, name))
+        else:
+            self.pending_actions.append(lambda: self._create_led_widget(pin, name))
 
     def _create_led_widget(self, pin, name):
         frame = tk.Frame(self.main_frame)
@@ -59,10 +72,8 @@ class GPIOEmulator:
 
     def set_led(self, pin, state):
         if pin in self.leds:
-            color = "red"  # Default generic color
-            # Try to guess color from variable names if possible, but here we just map generic
-            # In a real app we might map pin to color.
-            # actually, let's make it configurable or just bright
+            # ... existing logic ...
+            color = "red" 
             bg_color = "lime" if state else "gray"
             text = "ON" if state else "OFF"
             
@@ -76,6 +87,8 @@ class GPIOEmulator:
     def add_button(self, pin, name=None):
         if self.root:
             self.root.after(0, lambda: self._create_button_widget(pin, name))
+        else:
+            self.pending_actions.append(lambda: self._create_button_widget(pin, name))
 
     def _create_button_widget(self, pin, name):
         frame = tk.Frame(self.main_frame)
@@ -94,7 +107,8 @@ class GPIOEmulator:
         if pin in self.buttons:
             self.buttons[pin]["state"] = True
             # Auto release after 200ms
-            self.root.after(200, lambda: self._release_button(pin))
+            if self.root:
+                self.root.after(200, lambda: self._release_button(pin))
 
     def _release_button(self, pin):
         if pin in self.buttons:
@@ -108,6 +122,8 @@ class GPIOEmulator:
     def add_buzzer(self, pin):
         if self.root:
             self.root.after(0, lambda: self._create_buzzer_widget(pin))
+        else:
+            self.pending_actions.append(lambda: self._create_buzzer_widget(pin))
 
     def _create_buzzer_widget(self, pin):
         frame = tk.Frame(self.main_frame)
@@ -117,14 +133,21 @@ class GPIOEmulator:
         self.buzzer.pack()
 
     def set_buzzer(self, pin, state):
+        # Queue if not ready? Or just ignore early buzzes? Logic says buzzes come later.
+        if self.buzzer:
+           # ... existing ...
+           pass # implementation below
+        # If buzzer widget doesn't exist yet, we can't update it. 
+        # Usually set_buzzer is called after init.
+        if not self.root: return
+
         if self.buzzer:
             bg = "red" if state else "white"
             text = "BEEP!" if state else "BUZZER"
             def update():
                 if self.buzzer:
                     self.buzzer.config(bg=bg, text=text)
-            if self.root:
-                self.root.after(0, update)
+            self.root.after(0, update)
 
 
 # --- Mock Classes mimicking gpiozero ---

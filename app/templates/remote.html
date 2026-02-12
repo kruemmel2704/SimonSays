@@ -26,49 +26,35 @@
      * MAIN CONTAINER
      * Holds the game board centered.
      */
+    /*
+     * MAIN CONTAINER
+     * Holds the game board centered.
+     */
     .simon-wrapper {
-        position: fixed;
-        /* Force full screen overlay */
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: 2000;
-        /* Above navbar */
+        position: relative;
+        width: 100%;
+        min-height: 80vh;
+        /* Fill rest of screen roughly */
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        /* Keep the cool background but bounded */
         background: radial-gradient(circle at center, #2a2a2a 0%, #111 100%);
-    }
-
-    /* Add a close/back button since we cover the navbar */
-    .back-btn {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        color: #888;
-        text-decoration: none;
-        font-size: 1.2rem;
-        z-index: 2001;
-        background: rgba(0, 0, 0, 0.5);
-        padding: 5px 15px;
         border-radius: 20px;
-        border: 1px solid #444;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     }
 
-    .back-btn:hover {
-        color: white;
-        background: rgba(0, 0, 0, 0.8);
-    }
+    /* Back button removed as we now use the Navbar */
 
     /*
      * THE GAME BOARD (THE WHEEL)
      */
     .game-board {
         position: relative;
-        width: min(80vmin, 600px);
-        height: min(80vmin, 600px);
+        width: min(70vmin, 500px);
+        /* Slightly smaller to fit in container */
+        height: min(70vmin, 500px);
         border-radius: 50%;
         background-color: #222;
         padding: 15px;
@@ -262,7 +248,7 @@
 
 {% block content %}
 <div class="simon-wrapper">
-    <a href="/" class="back-btn">← Dashboard</a>
+    <!-- Back button removed (Navbar is used) -->
     <div class="game-board">
         <div class="game-board-inner">
             <div id="btn-green" class="simon-btn" data-color="green"></div>
@@ -292,60 +278,124 @@
 <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"
     integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+"
     crossorigin="anonymous"></script>
+<!-- Highscore Entry Modal -->
+<div class="modal fade" id="nameInputModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-hidden="true" style="z-index: 10000;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-info">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title font-orbitron">Game Over!</h5>
+            </div>
+            <div class="modal-body text-center">
+                <p class="lead">Score: <span id="final-score" class="fw-bold text-warning">0</span></p>
+                <p>Save your Highscore:</p>
+                <form id="name-form">
+                    <div class="mb-3">
+                        <input type="text" class="form-control bg-secondary text-white border-0 text-center"
+                            id="player-name" placeholder="YOUR NAME" required autocomplete="off">
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-info fw-bold">SAVE & RESTART</button>
+                        <a href="/" class="btn btn-outline-light mt-2 btn-sm">View Highscores</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
 <script>
-    let socket;
+    const socket = io('/remote');
+    // Globaler Socket für den default namespace (für Highscore-Submit)
+    // Wir erzeugen ihn EINMAL, nicht bei jedem Submit, um Ressourcen zu sparen.
+    const defaultSocket = io('/');
 
-    // Difficulty Setting Function (Global Scope)
+    // Setup Visuals
+    const gameBoard = document.querySelector('.game-board');
+    const SIMON_BTNS = {
+        'green': document.getElementById('btn-green'),
+        'red': document.getElementById('btn-red'),
+        'yellow': document.getElementById('btn-yellow'),
+        'blue': document.getElementById('btn-blue')
+    };
+    const DIFF_BTNS = document.querySelectorAll('.diff-btn');
+    const STATUS_DOT = document.getElementById('status-indicator');
+
+    // Modal Elements
+    const modalElement = document.getElementById('nameInputModal');
+    const modal = new bootstrap.Modal(modalElement);
+    const nameForm = document.getElementById('name-form');
+    const nameInput = document.getElementById('player-name');
+    const scoreDisplay = document.getElementById('final-score');
+    // const debugLog = document.getElementById('debug-log'); // Removed
+
+    function log(msg) {
+        console.log(msg);
+    }
+
+    // State
+    let isNameInputActive = false;
+
+    // Difficulty Handling
     function setDifficulty(level) {
+        log("Setting difficulty to: " + level);
         if (socket && socket.connected) {
-            console.log("Setting difficulty to:", level);
             socket.emit('change_difficulty', { level: level });
+        } else {
+            log("Error: Socket not connected");
         }
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-        // --- 1. SETUP ---
-        const STATUS_DOT = document.getElementById('status-indicator');
-        const BUTTONS = {
-            red: document.getElementById('btn-red'),
-            green: document.getElementById('btn-green'),
-            blue: document.getElementById('btn-blue'),
-            yellow: document.getElementById('btn-yellow')
-        };
-        const DIFF_BTNS = document.querySelectorAll('.diff-btn');
-
-        // --- 2. SOCKET CONNECTION ---
-        // Connect specifically to the /remote namespace
-        socket = io('/remote', {
-            transports: ['websocket', 'polling']
-        });
-
-        // --- 3. EVENT HANDLERS ---
-
+        // Socket Events
         socket.on('connect', () => {
-            console.log("Remote: Connected to server.");
+            log("Socket Connected! ID: " + socket.id);
             STATUS_DOT.classList.remove('disconnected');
             STATUS_DOT.classList.add('connected');
-
-            // Immediately ask for current state
-            socket.emit('request_led_snapshot');
+            socket.emit('request_snapshot');
         });
 
         socket.on('disconnect', () => {
-            console.warn("Remote: Disconnected from server.");
+            log("Socket Disconnected!");
             STATUS_DOT.classList.remove('connected');
             STATUS_DOT.classList.add('disconnected');
         });
 
-        socket.on('connect_error', (err) => {
-            console.error("Remote: Connection Error:", err);
+        socket.on('connect_error', (error) => {
+            log("Socket Connection Error: " + error.message);
             STATUS_DOT.classList.remove('connected');
             STATUS_DOT.classList.add('disconnected');
+        });
+
+        socket.on('led_state', (data) => {
+            // log(`LED State: ${data.color} -> ${data.state}`);
+            const btn = SIMON_BTNS[data.color];
+            if (btn) {
+                if (data.state === 'on') {
+                    btn.classList.add('active');
+                    // log(`${data.color} ON`);
+                } else {
+                    btn.classList.remove('active');
+                }
+            }
+        });
+
+        socket.on('led_snapshot', (leds) => {
+            log("Received LED Snapshot");
+            for (const [color, state] of Object.entries(leds)) {
+                const btn = SIMON_BTNS[color];
+                if (btn) {
+                    if (state === 'on') btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+            }
         });
 
         socket.on('difficulty_changed', (data) => {
-            console.log("Difficulty changed:", data.level);
+            log("Difficulty changed to: " + data.level);
             DIFF_BTNS.forEach(btn => {
                 if (btn.dataset.level === data.level) {
                     btn.classList.add('active-diff');
@@ -355,64 +405,68 @@
             });
         });
 
-        // --- 4. GAME LOGIC ---
+        // Name Input Logic
+        socket.on('request_name', (data) => {
+            log("Request Name Event received! Score: " + data.score);
+            scoreDisplay.textContent = data.score;
 
-        function setLight(color, isOn) {
-            const btn = BUTTONS[color];
-            if (!btn) return;
-
-            if (isOn) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        }
-
-        // Handle single updates (Realtime)
-        socket.on('led_state', (data) => {
-            // Expecting: {color: 'red', state: 'on'/'off' or true/false}
-            if (data && data.color) {
-                const isOn = (data.state === 'on' || data.state === true);
-                setLight(data.color, isOn);
+            // Prevent double opening
+            if (!isNameInputActive && !modalElement.classList.contains('show')) {
+                isNameInputActive = true;
+                nameInput.value = '';
+                modal.show();
+                setTimeout(() => nameInput.focus(), 500);
             }
         });
 
-        // Handle bulk updates (Snapshots)
-        socket.on('led_snapshot', (data) => {
-            const states = (data && data.states) ? data.states : {};
-            ['red', 'green', 'blue', 'yellow'].forEach(color => {
-                const val = states[color];
-                const isOn = (val === 'on' || val === true);
-                setLight(color, isOn);
+        // Handle Input Submission
+        nameForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = nameInput.value.trim();
+            if (name) {
+                // Nutze globalen Socket
+                defaultSocket.emit('submit_highscore', { name: name });
+
+                modal.hide();
+                isNameInputActive = false; // Reset flag
+            }
+        });
+
+        // Button Clicks
+        Object.entries(SIMON_BTNS).forEach(([color, btn]) => {
+            const handleInput = (e) => {
+                // Prevent default to avoid double-firing on some touch devices
+                if (e.type === 'touchstart') e.preventDefault();
+
+                log(`Input: ${color} (Socket: ${socket.connected})`);
+
+                // Visual feedback immediately
+                btn.classList.add('active');
+                setTimeout(() => btn.classList.remove('active'), 200);
+
+                if (socket.connected) {
+                    socket.emit('remote_input', { color: color });
+                } else {
+                    log("Cannot send: Disconnected");
+                }
+            };
+            // Use mousedown for desktop, touchstart for mobile
+            btn.addEventListener('mousedown', (e) => {
+                // Ignore mousedown if we just processed a touchstart (rare but possible)
+                handleInput(e);
+            });
+            btn.addEventListener('touchstart', handleInput, { passive: false });
+        });
+
+        // Difficulty Buttons
+        DIFF_BTNS.forEach(btn => {
+            btn.addEventListener('click', () => {
+                setDifficulty(btn.dataset.level);
             });
         });
 
-
-        // --- 5. INTERACTION ---
-
-        function handleInput(e) {
-            // Prevent zooming or scrolling
-            e.preventDefault();
-
-            const color = this.getAttribute('data-color');
-            if (socket.connected && color) {
-                // Visual feedback instantly for better feel
-                this.classList.add('active');
-                setTimeout(() => this.classList.remove('active'), 200);
-
-                console.log(`Remote: Sending input '${color}'`);
-                socket.emit('remote_input', { color: color });
-            }
-        }
-
-        Object.values(BUTTONS).forEach(btn => {
-            // Support both Touch and Mouse
-            btn.addEventListener('touchstart', handleInput, { passive: false });
-            btn.addEventListener('mousedown', handleInput);
-        });
-
         // --- 6. WATCHDOG (Polling) ---
-        // Every 1s, ask server "How do the lights look?" 
+        // Every 1s, ask server "How do the lights look?"
         setInterval(() => {
             if (socket.connected) {
                 socket.emit('request_led_snapshot');

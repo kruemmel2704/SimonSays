@@ -1,51 +1,140 @@
 {% extends "base.html" %}
 
+{% block title %}Simon Dashboard{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 text-center">
-        <h1 class="display-4 mb-4">🏆 Highscore 🏆<br>Board </h1>
-          
-        <div class="card shadow">
+<div class="row">
+    <div class="col-md-8 mx-auto text-center">
+        <h1 class="mb-4 display-4">Highscores</h1>
+
+        <div class="card shadow-lg">
             <div class="card-body p-0">
-                <table class="table table-dark table-hover mb-0">
-                    <thead> 
+                <table class="table table-dark table-striped table-hover mb-0" id="highscore-table">
+                    <thead>
                         <tr>
-                            <th scope="col" style="width: 20%">Rang</th>
+                            <th scope="col">#</th>
                             <th scope="col">Name</th>
-                            <th scope="col" style="width: 30%">Score</th>
+                            <th scope="col">Score</th>
+                            <th scope="col">Datum</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% if scores %}
-                            {% for entry in scores %}
-                            <tr>
-                                <th scope="row">
-                                    {% if loop.index == 1 %} 🥇 
-                                    {% elif loop.index == 2 %} 🥈 
-                                    {% elif loop.index == 3 %} 🥉 
-                                    {% else %} {{ loop.index }} 
-                                    {% endif %}
-                                </th>
-                                <td>{{ entry.name }}</td>
-                                <td class="fw-bold text-info">{{ entry.score }}</td>
-                            </tr>
-                            {% endfor %}
+                        {% for score in scores %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ score.name }}</td>
+                            <td><span class="badge bg-warning text-dark">{{ score.score }}</span></td>
+                            <td>{{ score.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
+                        </tr>
                         {% else %}
-                            <tr>
-                                <td colspan="3" class="py-5 text-light">
-                                    Noch keine Highscores vorhanden. <br>
-                                    Spiel eine Runde, um dich zu verewigen!
-                                </td>
-                            </tr>
-                        {% endif %}
+                        <tr>
+                            <td colspan="4" class="text-muted py-3">Noch keine Spiele gespielt. Sei der Erste!</td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
-        
+
         <div class="mt-4">
             <a href="/remote" class="btn btn-outline-info btn-lg">Jetzt spielen & Fernsteuern</a>
         </div>
     </div>
 </div>
+
+<!-- Name Input Modal -->
+<div class="modal fade" id="nameInputModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-info">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Game Over! Neues Highscore?</h5>
+            </div>
+            <div class="modal-body">
+                <p class="lead">Du hast <span id="final-score" class="fw-bold text-warning">0</span> Punkte erreicht.
+                </p>
+                <p>Bitte gib deinen Namen ein, um fortzufahren:</p>
+                <form id="name-form">
+                    <div class="mb-3">
+                        <input type="text" class="form-control bg-secondary text-white border-0" id="player-name"
+                            placeholder="Dein Name" required autofocus>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-info fw-bold">Speichern & Weiter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const socket = io();
+        const modalElement = document.getElementById('nameInputModal');
+        const modal = new bootstrap.Modal(modalElement);
+        const nameForm = document.getElementById('name-form');
+        const nameInput = document.getElementById('player-name');
+        const scoreDisplay = document.getElementById('final-score');
+        const tableBody = document.querySelector('#highscore-table tbody');
+
+        let isNameInputActive = false;
+
+        // 1. Warte auf Aufforderung zur Namenseingabe
+        socket.on('request_name', (data) => {
+            console.log("Game over! Score:", data.score);
+            scoreDisplay.textContent = data.score;
+
+            // Nur anzeigen wenn wir nicht schon dran sind
+            if (!isNameInputActive && !modalElement.classList.contains('show')) {
+                isNameInputActive = true;
+                nameInput.value = ''; // Reset nur beim ersten Öffnen
+                modal.show();
+                setTimeout(() => nameInput.focus(), 500);
+            }
+        });
+
+        // 2. Namen absenden
+        nameForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = nameInput.value.trim();
+            if (name) {
+                socket.emit('submit_highscore', { name: name });
+                modal.hide();
+                isNameInputActive = false;
+            }
+        });
+
+        // 3. Highscore Tabelle aktualisieren
+        socket.on('update_highscores', (scores) => {
+            console.log("Neue Highscores empfangen:", scores);
+            tableBody.innerHTML = '';
+
+            if (scores.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" class="text-muted py-3">Noch keine Spiele gespielt. Sei der Erste!</td></tr>';
+                return;
+            }
+
+            scores.forEach((s, index) => {
+                const date = new Date(s.timestamp).toLocaleDateString('de-DE', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+
+                const row = `
+                    <tr>
+                        <th scope="row">${index + 1}</th>
+                        <td>${s.name}</td>
+                        <td><span class="badge bg-warning text-dark">${s.score}</span></td>
+                        <td>${date}</td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+        });
+
+    });
+</script>
 {% endblock %}

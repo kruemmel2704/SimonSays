@@ -10,22 +10,18 @@ from app.config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE, 
 
 # Lokaler Mock-Import, falls wir nicht auf dem Pi sind
 if not IS_RASPI:
-    print("Nutze GUI-Emulator für GPIOs...")
+    print("Versuche mock_gpio_gui zu laden...")
     try:
         from mock_gpio_gui import LED, Button, Buzzer, Device
-    except ImportError:
-        print("WARNUNG: mock_gpio_gui.py nicht gefunden, nutze gpiozero MockFactory fallback")
-        pass # Fallback auf Standard gpiozero logic unten
-
-def ensure_gpio_factory():
-    """Nutzt echte GPIOs auf dem Pi, sonst Mock für lokale/dev Umgebungen."""
-    if not IS_RASPI:
-        return # Unser GUI Mock braucht keine Factory-Config
-
-    try:
-        Device.ensure_pin_factory()
-    except BadPinFactory:
-        Device.pin_factory = MockFactory()
+        print("GUI-Emulator geladen.")
+    except ImportError as e:
+        print(f"Fehler beim Laden von mock_gpio_gui: {e}")
+        print("Fallback auf Standard-Mock (ohne GUI)...")
+        # Wir setzen die Factory SOFORT, damit gpiozero beim Initialisieren von LEDs nicht abstürzt
+        try:
+            Device.pin_factory = MockFactory()
+        except Exception:
+            pass
 
 
 class SilentBuzzer:
@@ -41,7 +37,8 @@ class SimonSaysGame:
         """
         socket_callback: Funktion, um Daten an das Web-Frontend zu senden.
         """
-        ensure_gpio_factory()
+        # Factory ist schon global gesetzt
+
 
         self.sequence = []
         self.leds = {}
@@ -70,8 +67,11 @@ class SimonSaysGame:
             
     def _emit(self, event, data):
         """Hilfsfunktion sendet Daten an Flask"""
+        # print(f"Logic: _emit {event}") 
         if self.socket_callback:
             self.socket_callback(event, data)
+        else:
+            print(f"ERROR: _emit '{event}' called but socket_callback is None!")
 
     def _set_led_state(self, color, state):
         """Setzt Hardware-LED und spiegelt den Zustand ins Web-Frontend."""
@@ -185,6 +185,62 @@ class SimonSaysGame:
             for color in self.colors:
                 self._set_led_state(color, False)
             time.sleep(0.3)
+
+        # Warten auf Namenseingabe im Dashboard
+        self.wait_for_name_input(score)
+
+    def wait_for_name_input(self, score):
+        """
+        Blockiert den Game-Loop, bis ein Name über das Dashboard eingegeben wurde.
+        """
+        self._emit('request_name', {'score': score})
+        print("Warte auf Namenseingabe...")
+        
+        self.name_received_flag = False
+        self.current_score = score # Speichern für on_name_submitted
+        
+        while not self.name_received_flag:
+            time.sleep(1.0)
+            # Erneut anfordern falls Client neu lädt oder das erste Event verpasst hat
+            self._emit('request_name', {'score': score})
+            
+        print("Name empfangen, Spiel wird zurückgesetzt.")
+
+    def on_name_submitted(self, name):
+        """
+        Wird von der Flask-Route aufgerufen, wenn ein Name kommt.
+        """
+        # Verhindere doppelte Verarbeitung (Race Condition oder mehrfacher Client-Emit)
+        if self.name_received_flag:
+            print(f"Name '{name}' ignoriert, da Spiel bereits fortgesetzt wird.")
+            return
+
+        print(f"Name erhalten: {name} für Score: {self.current_score}")
+        
+        # In die DB speichern (im App Context)
+        from app import db
+        from app.models import Highscore
+        from flask import current_app
+
+        # Workaround: Da wir hier im Thread sind, müssen wir sicherstellen, dass wir einen App Context haben
+        # Meistens wird diese Funktion aber vom Main-Thread (Flask Request) aufgerufen, da passt es.
+        # Falls es vom Socket-Thread kommt, ist auch ein Context da.
+        
+        try:
+            hs = Highscore(name=name, score=self.current_score)
+            db.session.add(hs)
+            db.session.commit()
+            print("Highscore gespeichert.")
+            
+            # Frontend aktualisieren
+            from app.routes.main import handle_request_highscores
+            handle_request_highscores()
+            
+        except Exception as e:
+            print(f"Fehler beim Speichern des Highscores: {e}")
+
+        # Loop freigeben
+        self.name_received_flag = True
 
     def wait_for_start_with_wave(self):
         """Warte-Animation bis jemand drückt (Start)"""
