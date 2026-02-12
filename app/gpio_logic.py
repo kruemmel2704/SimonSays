@@ -8,7 +8,7 @@ from app.config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE
 
 class SimonSaysGame:
     def __init__(self, socket_callback=None):
-        """
+        """ 
         socket_callback: Funktion, um Daten an das Web-Frontend zu senden.
         """
         self.sequence = []
