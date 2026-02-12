@@ -115,7 +115,8 @@
 {% endblock %}
 
 {% block extra_js %}
-(function () {
+<script>
+    (function () {
     // Wenn socket.io client nicht geladen ist, sauber abbrechen (verhindert "weiße Seite" durch JS-Fehler)
     if (typeof io === 'undefined') {
         const statusMsg = document.getElementById('status-msg');
@@ -254,4 +255,5 @@
         socket.emit('change_difficulty', {level: level});
     };
 })();
+</script>
 {% endblock %}
