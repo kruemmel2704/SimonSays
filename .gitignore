@@ -7,7 +7,6 @@ app/__pycache__/__init__.cpython-313.pyc
 app/__pycache__/__init__.cpython-314.pyc
 
 # Local Dev
-mock_gpio_gui.py
 app/__pycache__/config.cpython-314.pyc
 app/__pycache__/gpio_logic.cpython-314.pyc
 app/routes/__pycache__/__init__.cpython-314.pyc
