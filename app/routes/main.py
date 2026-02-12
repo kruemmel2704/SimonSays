@@ -28,4 +28,5 @@ def dashboard():
 @main_bp.route('/remote')
 def remote():
     """Die Seite für die Echtzeit-Fernsteuerung/Anzeige."""
-    return render_template('remote.html')
+    from app.config import DIFFICULTY_SETTINGS
+    return render_template('remote.html', difficulty_settings=DIFFICULTY_SETTINGS)

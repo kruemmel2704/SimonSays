@@ -6,11 +6,22 @@ from gpiozero.exc import BadPinFactory
 from gpiozero.pins.mock import MockFactory
 
 # Wir importieren die Konfiguration
-from app.config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE
+from app.config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE, IS_RASPI
 
+# Lokaler Mock-Import, falls wir nicht auf dem Pi sind
+if not IS_RASPI:
+    print("Nutze GUI-Emulator für GPIOs...")
+    try:
+        from mock_gpio_gui import LED, Button, Buzzer, Device
+    except ImportError:
+        print("WARNUNG: mock_gpio_gui.py nicht gefunden, nutze gpiozero MockFactory fallback")
+        pass # Fallback auf Standard gpiozero logic unten
 
 def ensure_gpio_factory():
     """Nutzt echte GPIOs auf dem Pi, sonst Mock für lokale/dev Umgebungen."""
+    if not IS_RASPI:
+        return # Unser GUI Mock braucht keine Factory-Config
+
     try:
         Device.ensure_pin_factory()
     except BadPinFactory:

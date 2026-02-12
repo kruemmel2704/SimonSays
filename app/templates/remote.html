@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Simon Remote{% endblock %}
+{% block title %}Simon Command Center{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -13,12 +13,13 @@
         padding: 0;
         width: 100%;
         height: 100%;
-        background-color: #111;
-        font-family: sans-serif;
+        background-color: #1a1a1a;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         overflow: hidden;
         /* No scrollbars */
         user-select: none;
         /* No text selection */
+        color: #ddd;
     }
 
     /*
@@ -26,119 +27,186 @@
      * Holds the game board centered.
      */
     .simon-wrapper {
-        position: relative;
+        position: fixed;
+        /* Force full screen overlay */
+        top: 0;
+        left: 0;
         width: 100vw;
         height: 100vh;
+        z-index: 2000;
+        /* Above navbar */
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
+        background: radial-gradient(circle at center, #2a2a2a 0%, #111 100%);
+    }
+
+    /* Add a close/back button since we cover the navbar */
+    .back-btn {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        color: #888;
+        text-decoration: none;
+        font-size: 1.2rem;
+        z-index: 2001;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 5px 15px;
+        border-radius: 20px;
+        border: 1px solid #444;
+    }
+
+    .back-btn:hover {
+        color: white;
+        background: rgba(0, 0, 0, 0.8);
     }
 
     /*
      * THE GAME BOARD (THE WHEEL)
-     * Fixed aspect ratio, responsive size.
      */
     .game-board {
         position: relative;
-        width: 80vmin;
-        /* 80% of viewport min dimension */
-        height: 80vmin;
+        width: min(80vmin, 600px);
+        height: min(80vmin, 600px);
         border-radius: 50%;
         background-color: #222;
-        border: 4px solid #333;
-        box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
-
-        /* 
-         IMPORTANT: We use a container internal to the board 
-         to hold the absolute positioned buttons.
-        */
+        padding: 15px;
+        /* Bezel thickness */
+        box-shadow:
+            0 0 0 2px #111,
+            0 0 20px rgba(0, 0, 0, 0.5),
+            inset 0 0 10px rgba(0, 0, 0, 0.8);
         box-sizing: border-box;
+    }
+
+    .game-board-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        overflow: hidden;
+        background-color: #111;
+        box-shadow: inset 0 0 10px #000;
     }
 
     /*
      * THE BUTTONS
-     * Absolute positioning to ensure they form a perfect 4-part circle.
-     * Each button takes up 50% width/height minus a small gap.
      */
     .simon-btn {
         position: absolute;
-        width: 48%;
-        /* 50% minus 2% gap space */
-        height: 48%;
-        opacity: 0.25;
-        transition: opacity 0.1s;
+        width: 50%;
+        height: 50%;
+        opacity: 0.6;
+        transition: all 0.1s ease;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
+        border: 4px solid #222;
+        /* Gap between buttons */
+        box-sizing: border-box;
     }
 
     /* Positioning the 4 quadrants */
-    #btn-red {
-        top: 0;
-        left: 0;
-        background-color: #ff0000;
-        border-top-left-radius: 100% 100%;
-        /* Perfect quarter circle */
-    }
-
     #btn-green {
         top: 0;
-        right: 0;
-        background-color: #00ff00;
-        border-top-right-radius: 100% 100%;
+        left: 0;
+        background-color: #00a74a;
+        border-top-left-radius: 100%;
     }
 
-    #btn-blue {
-        bottom: 0;
-        left: 0;
-        background-color: #0000ff;
-        border-bottom-left-radius: 100% 100%;
+    #btn-red {
+        top: 0;
+        right: 0;
+        background-color: #9f0f17;
+        border-top-right-radius: 100%;
     }
 
     #btn-yellow {
         bottom: 0;
+        left: 0;
+        background-color: #cca707;
+        border-bottom-left-radius: 100%;
+    }
+
+    #btn-blue {
+        bottom: 0;
         right: 0;
-        background-color: #ffff00;
-        border-bottom-right-radius: 100% 100%;
+        background-color: #094a8f;
+        border-bottom-right-radius: 100%;
     }
 
     /*
      * ACTIVE STATE (LIGHT UP)
      */
-    .simon-btn.active {
-        opacity: 1 !important;
-        box-shadow: 0 0 40px currentColor;
-        /* Glow in its own color */
-        z-index: 100;
+    .simon-btn.active#btn-green {
+        background-color: #13ff7c;
+        box-shadow: 0 0 30px #13ff7c;
+        z-index: 10;
+        opacity: 1;
     }
 
-    /* CENTER CIRCLE (Optional styling to make it look like the toy) */
+    .simon-btn.active#btn-red {
+        background-color: #ff4c4c;
+        box-shadow: 0 0 30px #ff4c4c;
+        z-index: 10;
+        opacity: 1;
+    }
+
+    .simon-btn.active#btn-yellow {
+        background-color: #fed93f;
+        box-shadow: 0 0 30px #fed93f;
+        z-index: 10;
+        opacity: 1;
+    }
+
+    .simon-btn.active#btn-blue {
+        background-color: #1c8cff;
+        box-shadow: 0 0 30px #1c8cff;
+        z-index: 10;
+        opacity: 1;
+    }
+
+    /* CENTER DECORATION */
     .center-decoration {
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 30%;
-        height: 30%;
-        background-color: #111;
+        width: 35%;
+        height: 35%;
+        background: linear-gradient(135deg, #ddd, #aaa);
         border-radius: 50%;
         z-index: 50;
-        border: 4px solid #333;
+        border: 8px solid #222;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 
-        /* Display connection indicator inside */
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
+        text-align: center;
+    }
+
+    .brand-text {
+        color: #222;
+        font-weight: 900;
+        font-size: min(4vmin, 24px);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+        text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
     }
 
     /* STATUS INDICATOR (The logo/text inside) */
     #status-indicator {
-        width: 15px;
-        height: 15px;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
         background-color: #444;
-        /* Grey = connecting */
-        box-shadow: 0 0 5px rgba(255, 255, 255, 0.1);
+        box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.5);
         transition: background-color 0.3s;
+        margin-top: 5px;
+        border: 1px solid #888;
     }
 
     #status-indicator.connected {
@@ -150,20 +218,71 @@
         background-color: #ff0000;
         box-shadow: 0 0 10px #ff0000;
     }
+
+    /*
+     * CONTROLS (Difficulty)
+     */
+    .controls-container {
+        margin-top: 30px;
+        display: flex;
+        gap: 15px;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #444;
+    }
+
+    .diff-btn {
+        background-color: #333;
+        color: #aaa;
+        border: 1px solid #555;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
+
+    .diff-btn:hover {
+        background-color: #444;
+        color: #fff;
+    }
+
+    .diff-btn.active-diff {
+        background-color: #0099cc;
+        color: white;
+        border-color: #00bfff;
+        box-shadow: 0 0 10px rgba(0, 153, 204, 0.5);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="simon-wrapper">
+    <a href="/" class="back-btn">← Dashboard</a>
     <div class="game-board">
-        <div id="btn-red" class="simon-btn" data-color="red"></div>
-        <div id="btn-green" class="simon-btn" data-color="green"></div>
-        <div id="btn-blue" class="simon-btn" data-color="blue"></div>
-        <div id="btn-yellow" class="simon-btn" data-color="yellow"></div>
+        <div class="game-board-inner">
+            <div id="btn-green" class="simon-btn" data-color="green"></div>
+            <div id="btn-red" class="simon-btn" data-color="red"></div>
+            <div id="btn-yellow" class="simon-btn" data-color="yellow"></div>
+            <div id="btn-blue" class="simon-btn" data-color="blue"></div>
 
-        <div class="center-decoration">
-            <div id="status-indicator" title="Connection Status"></div>
+            <div class="center-decoration">
+                <div class="brand-text">SIMON</div>
+                <div id="status-indicator" title="Connection Status"></div>
+            </div>
         </div>
+    </div>
+
+    <div class="controls-container">
+        {% for level in difficulty_settings.keys() %}
+        <button class="diff-btn" data-level="{{ level }}" onclick="setDifficulty('{{ level }}')">
+            {{ level }}
+        </button>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}
@@ -175,6 +294,16 @@
     crossorigin="anonymous"></script>
 
 <script>
+    let socket;
+
+    // Difficulty Setting Function (Global Scope)
+    function setDifficulty(level) {
+        if (socket && socket.connected) {
+            console.log("Setting difficulty to:", level);
+            socket.emit('change_difficulty', { level: level });
+        }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         // --- 1. SETUP ---
         const STATUS_DOT = document.getElementById('status-indicator');
@@ -184,10 +313,11 @@
             blue: document.getElementById('btn-blue'),
             yellow: document.getElementById('btn-yellow')
         };
+        const DIFF_BTNS = document.querySelectorAll('.diff-btn');
 
         // --- 2. SOCKET CONNECTION ---
         // Connect specifically to the /remote namespace
-        const socket = io('/remote', {
+        socket = io('/remote', {
             transports: ['websocket', 'polling']
         });
 
@@ -214,6 +344,17 @@
             STATUS_DOT.classList.add('disconnected');
         });
 
+        socket.on('difficulty_changed', (data) => {
+            console.log("Difficulty changed:", data.level);
+            DIFF_BTNS.forEach(btn => {
+                if (btn.dataset.level === data.level) {
+                    btn.classList.add('active-diff');
+                } else {
+                    btn.classList.remove('active-diff');
+                }
+            });
+        });
+
         // --- 4. GAME LOGIC ---
 
         function setLight(color, isOn) {
@@ -230,7 +371,6 @@
         // Handle single updates (Realtime)
         socket.on('led_state', (data) => {
             // Expecting: {color: 'red', state: 'on'/'off' or true/false}
-            console.log("Remote: Event 'led_state'", data);
             if (data && data.color) {
                 const isOn = (data.state === 'on' || data.state === true);
                 setLight(data.color, isOn);
@@ -239,9 +379,7 @@
 
         // Handle bulk updates (Snapshots)
         socket.on('led_snapshot', (data) => {
-            console.log("Remote: Event 'led_snapshot'", data);
             const states = (data && data.states) ? data.states : {};
-
             ['red', 'green', 'blue', 'yellow'].forEach(color => {
                 const val = states[color];
                 const isOn = (val === 'on' || val === true);
@@ -258,12 +396,12 @@
 
             const color = this.getAttribute('data-color');
             if (socket.connected && color) {
+                // Visual feedback instantly for better feel
+                this.classList.add('active');
+                setTimeout(() => this.classList.remove('active'), 200);
+
                 console.log(`Remote: Sending input '${color}'`);
                 socket.emit('remote_input', { color: color });
-
-                // Optional: Instant local feedback (visual only)
-                // setLight(color, true);
-                // setTimeout(() => setLight(color, false), 200);
             }
         }
 
@@ -274,13 +412,12 @@
         });
 
         // --- 6. WATCHDOG (Polling) ---
-        // Every 500ms, ask server "How do the lights look?" 
-        // This fixes missed packets.
+        // Every 1s, ask server "How do the lights look?" 
         setInterval(() => {
             if (socket.connected) {
                 socket.emit('request_led_snapshot');
             }
-        }, 500);
+        }, 1000);
 
     });
 </script>
