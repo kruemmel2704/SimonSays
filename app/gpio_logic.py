@@ -2,6 +2,8 @@ import time
 import random
 import threading
 import platform
+from gpiozero import Device
+from gpiozero.pins.lgpio import LGPIOFactory
 
 # Wir importieren die Konfiguration
 from app.config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE
@@ -11,11 +13,13 @@ try:
     from gpiozero import LED, Button, Buzzer
     # Teste ob wir wirklich Hardware-Zugriff haben
     test_buzzer = Buzzer(BUZZER_PIN)
+    Device.pin_factory = LGPIOFactory()
     IS_HARDWARE = True
     print("SIMON SAYS: Echte Hardware erkannt.")
 except (ImportError, Exception):
     IS_HARDWARE = False
     print("SIMON SAYS: Keine Hardware gefunden. Emulations-Modus aktiv.")
+    
 
     # Dummy-Klassen für den PC-Modus
     class LED:
