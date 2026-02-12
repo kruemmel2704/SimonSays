@@ -43,3 +43,10 @@ def handle_difficulty(data):
         app.game_instance.sequence_pause = settings['pause']
         print(f"Schwierigkeit auf {level} gesetzt")
         emit('difficulty_changed', {'level': level}, broadcast=True, namespace='/remote')
+
+@socketio.on('request_led_snapshot', namespace='/remote')
+def handle_request_led_snapshot():
+    """Erlaubt dem Frontend ein aktives Nachziehen des Live-Zustands."""
+    import app
+    if app.game_instance:
+        emit('led_snapshot', {'states': app.game_instance.get_led_snapshot()})

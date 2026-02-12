@@ -132,6 +132,7 @@
         console.log("Verbunden mit Pi-Remote");
         statusMsg.innerText = "Bereit zum Start";
         statusMsg.className = "text-success";
+        requestLedSnapshot();
     });
 
     socket.on('disconnect', function() {
@@ -150,6 +151,7 @@
     socket.on('reconnect', function() {
         statusMsg.innerText = "Wieder verbunden";
         statusMsg.className = "text-success";
+        requestLedSnapshot();
     });
 
     socket.on('status', function(data) {
@@ -159,30 +161,34 @@
         }
     });
 
+    function applyLedState(color, state) {
+        const btn = document.getElementById('btn-' + color);
+        if (!btn) return;
+        btn.classList.toggle('active', state === 'on');
+    }
+
+    function requestLedSnapshot() {
+        if (socket.connected) {
+            socket.emit('request_led_snapshot');
+        }
+    }
+
     socket.on('led_snapshot', function(data) {
         const states = data && data.states ? data.states : {};
         ['red', 'green', 'blue', 'yellow'].forEach((color) => {
-            const btn = document.getElementById('btn-' + color);
-            if (!btn) return;
-            if (states[color] === 'on') {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
+            applyLedState(color, states[color] === 'on' ? 'on' : 'off');
         });
     });
 
     // LIVE-SYNCHRONISATION
     socket.on('led_state', function(data) {
-        const btn = document.getElementById('btn-' + data.color);
-        if (btn) {
-            if (data.state === 'on') {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
+        if (data && data.color) {
+            applyLedState(data.color, data.state);
         }
     });
+
+    // Sicherheitsnetz: Snapshot periodisch nachziehen
+    setInterval(requestLedSnapshot, 1000);
 
     socket.on('game_status', function(data) {
         statusMsg.innerText = data.msg;
