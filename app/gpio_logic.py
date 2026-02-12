@@ -47,13 +47,23 @@ class SimonSaysGame:
 
     # --- HARDWARE STEUERUNG ---
     def flash_led(self, color):
-        self._emit('led_state', {'color': color, 'state': 'on'}) # Browser schaltet Licht an
+        # 1. Signal an den Browser: "Mach das Licht an!"
+        self._emit('led_state', {'color': color, 'state': 'on'})
+        
+        # 2. Echte Hardware schalten
         self.leds[color].on()
+        if hasattr(self, 'buzzer'): self.buzzer.on() # Buzzer an
+        
         time.sleep(self.flash_delay)
+        
+        # 3. Echte Hardware aus
         self.leds[color].off()
-        self._emit('led_state', {'color': color, 'state': 'off'}) # Browser schaltet Licht aus
+        if hasattr(self, 'buzzer'): self.buzzer.off() # Buzzer aus
+        
+        # 4. Signal an den Browser: "Licht wieder aus!"
+        self._emit('led_state', {'color': color, 'state': 'off'})
         time.sleep(self.sequence_pause)
-
+        
     def play_sequence(self):
         """Spielt die aktuelle Folge ab"""
         self._emit('game_status', {'msg': 'Simon zeigt...'})
