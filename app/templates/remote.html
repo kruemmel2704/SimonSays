@@ -8,7 +8,10 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        margin-top: 2rem;
+        min-height: 85vh;
+        /* Fast ganzer Screen minus Navbar */
+        margin: 0;
+        padding: 1rem;
     }
 
     .game-board {
@@ -108,20 +111,17 @@
 
 {% block content %}
 <div class="simon-wrapper">
-    <h1 class="mb-4">🎮 Simon Says Remote</h1>
-
-    <div class="game-board" aria-label="Live-Ansicht">
+    <!-- Das Rad (Game Board) -->
+    <div class="game-board" aria-label="Simon Says Game">
         <div id="btn-red" class="simon-btn"></div>
         <div id="btn-green" class="simon-btn"></div>
         <div id="btn-blue" class="simon-btn"></div>
         <div id="btn-yellow" class="simon-btn"></div>
     </div>
 
+    <!-- Steuerung (Buttons) -->
     <div class="center-info">
-        <span id="status-msg" class="text-info">Initialisiere...</span>
-
-        <div class="difficulty-group mt-4">
-            <p class="small text-muted mb-2">SCHWIERIGKEITSGRAD</p>
+        <div class="difficulty-group">
             <div class="btn-group">
                 <button class="btn btn-outline-success btn-sm" onclick="setDifficulty('easy')">EASY</button>
                 <button class="btn btn-outline-warning btn-sm" onclick="setDifficulty('medium')">MEDIUM</button>
