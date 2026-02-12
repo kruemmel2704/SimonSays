@@ -1,249 +1,255 @@
 {% extends "base.html" %}
 
+{% block title %}Simon Remote{% endblock %}
+
 {% block extra_css %}
 <style>
-    /* Haupt-Spielfeld: Ein runder Simon-Look */
+    /* 
+     * KIOSK MODE / FULL SCREEN STYLE 
+     * Zentriert, dunkel, Fokus nur auf dem Spielrad.
+     */
+    body,
+    html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        /* Scrollbars weg */
+        background-color: #121212;
+    }
+
+    /* Der Container füllt den Bildschirm und zentriert alles */
     .simon-wrapper {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        min-height: 85vh;
-        /* Fast ganzer Screen minus Navbar */
-        margin: 0;
-        padding: 1rem;
+        height: 100vh;
+        width: 100vw;
     }
 
+    /* Das Spielrad */
     .game-board {
+        position: relative;
+        width: 80vmin;
+        /* 80% der kleineren Bildschirmseite */
+        height: 80vmin;
+        border-radius: 50%;
+        background-color: #222;
+        border: 10px solid #333;
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+        overflow: hidden;
+        /* Damit die Sektoren nicht überstehen */
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        max-width: 420px;
-        width: 100%;
-        padding: 25px;
-        background: radial-gradient(circle, #333333 0%, #111111 100%);
-        border-radius: 50%;
-        border: 12px solid #1a1a1a;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
-        position: relative;
+        grid-template-rows: 1fr 1fr;
+        gap: 2%;
+        /* Lücke zwischen den Tasten */
+        padding: 2%;
+        box-sizing: border-box;
     }
 
-    /* Button-Basis-Design */
+    /* Die 4 Farbfelder */
     .simon-btn {
-        aspect-ratio: 1 / 1;
-        cursor: default;
-        opacity: 0.25;
-        transition: all 0.1s ease-in-out;
-        border: 4px solid rgba(0, 0, 0, 0.4);
-        position: relative;
+        width: 100%;
+        height: 100%;
+        opacity: 0.3;
+        /* Standard: dunkel/aus */
+        transition: opacity 0.1s, transform 0.1s;
+        cursor: pointer;
+        /* Verhindert "Auswählen" beim wilden Klicken */
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
     }
 
-    /* Formgebung der Sektoren */
-    #btn-red {
-        background-color: #ff0000;
-        border-top-left-radius: 100% 100%;
+    .simon-btn:active {
+        transform: scale(0.95);
     }
 
+    /* Farben & Formen */
     #btn-green {
         background-color: #00ff00;
-        border-top-right-radius: 100% 100%;
+        border-top-right-radius: 100%;
     }
 
-    #btn-blue {
-        background-color: #0000ff;
-        border-bottom-left-radius: 100% 100%;
+    #btn-red {
+        background-color: #ff0000;
+        border-top-left-radius: 100%;
     }
 
     #btn-yellow {
         background-color: #ffff00;
-        border-bottom-right-radius: 100% 100%;
+        border-bottom-left-radius: 100%;
     }
 
-    /* Glow-Effekte im aktiven Zustand (gesteuert via Pi) */
-    #btn-red.active {
+    #btn-blue {
+        background-color: #0000ff;
+        border-bottom-right-radius: 100%;
+    }
+
+    /* AKTIVER ZUSTAND (LEUCHTEN) */
+    .simon-btn.active {
         opacity: 1;
-        box-shadow: 0 0 50px #ff0000, inset 0 0 25px #ff6666;
-        transform: scale(0.98);
+        box-shadow: 0 0 30px currentColor;
+        /* Leuchtet in eigener Farbe */
+        z-index: 10;
+        /* Leuchten soll über andere Elemente strahlen */
     }
 
-    #btn-green.active {
-        opacity: 1;
-        box-shadow: 0 0 50px #00ff00, inset 0 0 25px #66ff66;
-        transform: scale(0.98);
+    /* Kleiner Verbindungs-Status unten rechts (dezenter Punkt) */
+    #conn-status {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #333;
+        /* Default: Disconnected */
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
     }
 
-    #btn-blue.active {
-        opacity: 1;
-        box-shadow: 0 0 50px #0000ff, inset 0 0 25px #6666ff;
-        transform: scale(0.98);
+    #conn-status.connected {
+        background-color: #00ff00;
+        box-shadow: 0 0 10px #00ff00;
     }
 
-    #btn-yellow.active {
-        opacity: 1;
-        box-shadow: 0 0 50px #ffff00, inset 0 0 25px #ffff66;
-        transform: scale(0.98);
-    }
-
-    /* Status-Anzeige in der Mitte */
-    .center-info {
-        margin-top: 30px;
-        text-align: center;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    #status-msg {
-        font-size: 1.4rem;
-        font-weight: bold;
-        display: block;
-        margin-bottom: 10px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-    }
-
-    .difficulty-group {
-        background: #1f1f1f;
-        padding: 15px;
-        border-radius: 10px;
-        border: 1px solid #333;
+    #conn-status.disconnected {
+        background-color: #ff0000;
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="simon-wrapper">
-    <!-- Das Rad (Game Board) -->
-    <div class="game-board" aria-label="Simon Says Game">
-        <div id="btn-red" class="simon-btn"></div>
-        <div id="btn-green" class="simon-btn"></div>
-        <div id="btn-blue" class="simon-btn"></div>
-        <div id="btn-yellow" class="simon-btn"></div>
+    <div class="game-board">
+        <!-- Reihenfolge im Grid beachten: -->
+        <!-- Oben Links: Rot -->
+        <div id="btn-red" class="simon-btn" data-color="red"></div>
+        <!-- Oben Rechts: Grün -->
+        <div id="btn-green" class="simon-btn" data-color="green"></div>
+        <!-- Unten Links: Blau -->
+        <div id="btn-blue" class="simon-btn" data-color="blue"></div>
+        <!-- Unten Rechts: Gelb -->
+        <div id="btn-yellow" class="simon-btn" data-color="yellow"></div>
     </div>
 
-    <!-- Steuerung (Buttons) -->
-    <div class="center-info">
-        <div class="difficulty-group">
-            <div class="btn-group">
-                <button class="btn btn-outline-success btn-sm" onclick="setDifficulty('easy')">EASY</button>
-                <button class="btn btn-outline-warning btn-sm" onclick="setDifficulty('medium')">MEDIUM</button>
-                <button class="btn btn-outline-danger btn-sm" onclick="setDifficulty('hard')">HARD</button>
-            </div>
-        </div>
-    </div>
+    <!-- Dezenter Verbindungs-Indikator -->
+    <div id="conn-status" title="Status"></div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script>
-    (function () {
-        // Wenn socket.io client nicht geladen ist, sauber abbrechen (verhindert "weiße Seite" durch JS-Fehler)
-        if (typeof io === 'undefined') {
-            const statusMsg = document.getElementById('status-msg');
-            if (statusMsg) {
-                statusMsg.innerText = "Socket.IO Client fehlt (/socket.io/socket.io.js)";
-                statusMsg.className = "text-danger";
-            }
-            console.error("Socket.IO client (io) is undefined. Stelle sicher, dass /socket.io/socket.io.js geladen wird.");
-            return;
-        }
-
-        // Nutze eine robustere Verbindungs-Option
+    document.addEventListener("DOMContentLoaded", () => {
+        // Verbindung zum Namespace /remote herstellen
         const socket = io('/remote', {
-            transports: ['polling', 'websocket'],
-            upgrade: true,
+            transports: ['websocket', 'polling'], // Websocket bevorzugen
             reconnection: true,
-            reconnectionAttempts: Infinity,
-            reconnectionDelay: 1000
+            reconnectionDelay: 500,
+            reconnectionAttempts: Infinity
         });
 
-        const statusMsg = document.getElementById('status-msg');
+        const statusDot = document.getElementById('conn-status');
+        const buttons = {
+            red: document.getElementById('btn-red'),
+            green: document.getElementById('btn-green'),
+            blue: document.getElementById('btn-blue'),
+            yellow: document.getElementById('btn-yellow')
+        };
 
-        const COLORS = ['red', 'green', 'blue', 'yellow'];
-        let lastUpdateTs = 0;
+        // --- HILFSFUNKTIONEN ---
 
-        const currentState = { red: 'off', green: 'off', blue: 'off', yellow: 'off' };
-
-        function applyLedState(color, state) {
-            const btn = document.getElementById('btn-' + color);
-            if (!btn) return;
-
-            const normalized = (state === 'on') ? 'on' : 'off';
-            if (currentState[color] === normalized) return;
-
-            currentState[color] = normalized;
-            btn.classList.toggle('active', normalized === 'on');
-            lastUpdateTs = Date.now();
+        function setLedColor(color, isOn) {
+            const btn = buttons[color];
+            if (btn) {
+                if (isOn) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            }
         }
 
-        function applySnapshot(states) {
-            const s = states || {};
-            COLORS.forEach((color) => {
-                applyLedState(color, s[color] === 'on' ? 'on' : 'off');
-            });
-            lastUpdateTs = Date.now();
+        function updateAll(states) {
+            if (!states) return;
+            for (const [color, state] of Object.entries(states)) {
+                setLedColor(color, state === 'on' || state === true);
+            }
         }
 
-        function requestLedSnapshot() {
+        // --- SOCKET EVENT LISTENER ---
+
+        socket.on('connect', () => {
+            console.log('Verunden mit /remote');
+            statusDot.classList.remove('disconnected');
+            statusDot.classList.add('connected');
+            // Sofort Update anfordern
+            socket.emit('request_led_snapshot');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Verbindung verloren');
+            statusDot.classList.remove('connected');
+            statusDot.classList.add('disconnected');
+        });
+
+        // 1. EVENT: Einzelne LED ändert sich (Echtzeit)
+        socket.on('led_state', (data) => {
+            // data = {color: 'red', state: 'on'}
+            if (data && data.color) {
+                const isOn = (data.state === 'on' || data.state === true);
+                setLedColor(data.color, isOn);
+            }
+        });
+
+        // 2. EVENT: Komplettes Update (z.B. beim Neuladen)
+        socket.on('led_snapshot', (data) => {
+            // data = {states: {red: 'off', green: 'on', ...}}
+            if (data && data.states) {
+                updateAll(data.states);
+            }
+        });
+
+        // 3. EVENT: Game Over (Optional: Alles kurz rot blinken lassen)
+        socket.on('game_over', () => {
+            document.querySelector('.game-board').style.borderColor = 'red';
+            setTimeout(() => {
+                document.querySelector('.game-board').style.borderColor = '#333';
+            }, 500);
+        });
+
+
+        // --- POLLING / WATCHDOG (Für Robustheit) ---
+        // Fragt alle 500ms aktiv nach dem Status, falls ein Paket verloren ging
+        setInterval(() => {
             if (socket.connected) {
                 socket.emit('request_led_snapshot');
             }
+        }, 500); // 2x pro Sekunde syncen
+
+
+        // --- INTERAKTION (Mausklick / Touch) ---
+        // Sendet Eingaben an den Server
+        Object.values(buttons).forEach(btn => {
+            btn.addEventListener('mousedown', sendClick);
+            btn.addEventListener('touchstart', sendClick);
+        });
+
+        function sendClick(e) {
+            e.preventDefault(); // Verhindert z.B. Zoom auf Tatsch
+            const color = this.getAttribute('data-color');
+            if (socket.connected && color) {
+                socket.emit('remote_input', { color: color });
+
+                // Visuelles Feedback sofort (für bessere Responsiveness)
+                // Der Server schickt zwar ein 'led_state', aber lokal wirkt es schneller.
+                // Wir lassen es nur kurz aufleuchten.
+                // (Optional: Wenn der Server-Logic das Licht steuert, kann man das hier weglassen,
+                // damit man sieht, was der Server "denkt".)
+            }
         }
-
-        socket.on('connect', function () {
-            console.log("Verbunden mit Pi-Remote");
-            requestLedSnapshot();
-        });
-
-        socket.on('disconnect', function () {
-            // Status updates entfernt
-        });
-
-        socket.on('connect_error', function (err) {
-            console.warn('Socket connect_error:', err && err.message ? err.message : err);
-        });
-
-        socket.on('reconnect', function () {
-            requestLedSnapshot();
-        });
-
-        // status listener entfernt
-
-        socket.on('led_snapshot', function (data) {
-            const states = data && data.states ? data.states : {};
-            applySnapshot(states);
-        });
-
-        // LIVE-SYNCHRONISATION (Event-basiert)
-        socket.on('led_state', function (data) {
-            if (data && data.color) {
-                applyLedState(data.color, data.state);
-            }
-        });
-
-        // game_status listener entfernt
-
-        socket.on('game_over', function (data) {
-            // Text update entfernt
-            const board = document.querySelector('.game-board');
-            if (board) {
-                board.style.boxShadow = "0 0 50px rgba(255,0,0,0.5)";
-                setTimeout(() => {
-                    board.style.boxShadow = "0 20px 50px rgba(0,0,0,0.9)";
-                }, 1000);
-            }
-        });
-
-        // Watchdog: Snapshot nur nachziehen, wenn Events ausbleiben
-        setInterval(() => {
-            if (!socket.connected) return;
-            if (Date.now() - lastUpdateTs > 2500) {
-                requestLedSnapshot();
-            }
-        }, 500);
-
-        // Global, weil onclick="setDifficulty('easy')" es braucht
-        window.setDifficulty = function (level) {
-            socket.emit('change_difficulty', { level: level });
-        };
-    })();
+    });
 </script>
 {% endblock %}
