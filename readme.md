@@ -106,7 +106,6 @@ docker compose logs -f
 - ****Case Sensitivity****: Unter Linux muss die Konfigurationsdatei strikt kleingeschrieben als config.py vorliegen, damit der Import im Docker-Container funktioniert.
 
 
+<<<<<<< HEAD
 ****Projekt von****: ***Sebastian Scholtysek, Robin Zindler, Lars Krümmel***
 ## 7.Erweiterung
-
-test
