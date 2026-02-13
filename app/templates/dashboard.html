@@ -5,7 +5,7 @@
 {% block content %}
 <div class="row">
     <div class="col-md-8 mx-auto text-center">
-        <h1 class="mb-4 display-4">Highscores</h1>
+        <h1 class="mb-4 display-4">🏆 Highscores 🏆</h1>
 
         <div class="card shadow-lg">
             <div class="card-body p-0">
@@ -21,9 +21,21 @@
                     <tbody>
                         {% for score in scores %}
                         <tr>
-                            <th scope="row">{{ loop.index }}</th>
+                            <th scope="row">
+                                <th scope="row">
+                                    {% if loop.index == 1 %}
+                                        🥇
+                                    {% elif loop.index == 2 %}
+                                        🥈
+                                    {% elif loop.index == 3 %}
+                                        🥉
+                                    {% else %}
+                                        {{ loop.index }}
+                                    {% endif %}
+                                </th>
+                            </th>
                             <td>{{ score.name }}</td>
-                            <td><span class="badge bg-warning text-dark">{{ score.score }}</span></td>
+                            <td>{{ score.score }}</td>
                             <td>{{ score.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
                         </tr>
                         {% else %}
