@@ -108,7 +108,36 @@ docker compose logs -f
 
 <<<<<<< HEAD
 ****Projekt von****: ***Sebastian Scholtysek, Robin Zindler, Lars Krümmel***
-## 7.Erweiterung
-- Bei der Erweiterung haben wir uns dafür entschieden ein Scoreboard und eine Remoteverbindung zu dem Game zu erstellen und so haben wir das ganze gemacht:
--
+## 7. Erweiterung: Web-Interface & Schwierigkeitsgrade
+
+Das Projekt wurde um eine Flask-Webanwendung erweitert, die eine Fernsteuerung, Statusanzeige und Highscore-Liste bietet.
+
+### Funktionen der Web-App (Flask)
+
+Die Flask-Applikation (`app/`) bietet folgende Vorteile:
+
+1.  **Dashboard & Highscores**:
+    - Zeigt die Top-10-Bestenliste an.
+    - Nach einem "Game Over" kann der Spieler seinen Namen eingeben, der zusammen mit dem erreichten Score gespeichert wird.
+    
+    ![Dashboard](screenshots/dashboard.png)
+
+2.  **Remote Control & Live-Ansicht**:
+    - **Fernsteuerung**: Die farbigen Buttons im Browser funktionieren wie die physischen Taster.
+    - **Echtzeit-Synchronisation**: Die LEDs im Browser leuchten synchron zur Hardware. Das Spiel kann komplett über den Browser gespielt werden.
+    - **Schwierigkeitswahl**: Über Buttons (Easy, Medium, Hard) kann der Schwierigkeitsgrad direkt geändert werden.
+
+    ![Remote Control](screenshots/remote.png)
+
+### Schwierigkeitsstufen
+
+Das Spiel bietet drei Schwierigkeitsgrade, die Geschwindigkeit und Pausen beeinflussen:
+
+| Stufe | Blink-Dauer | Pause zwischen Signalen | Beschreibung |
+| :--- | :--- | :--- | :--- |
+| **Easy** | 0.8s | 0.5s | Langsam und entspannt. Gut zum Einstieg. |
+| **Medium** | 0.5s | 0.3s | Standard-Geschwindigkeit. Ausgewogen. |
+| **Hard** | 0.2s | 0.1s | Sehr schnell. Nur für Experten! |
+
+Die Schwierigkeit kann über die **Web-Oberfläche (Remote)** oder über dedizierte **Hardware-Buttons** (GPIO 12, 13, 16) eingestellt werden.
 
