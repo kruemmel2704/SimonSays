@@ -22,17 +22,15 @@
                         {% for score in scores %}
                         <tr>
                             <th scope="row">
-                                <th scope="row">
-                                    {% if loop.index == 1 %}
-                                        🥇
-                                    {% elif loop.index == 2 %}
-                                        🥈
-                                    {% elif loop.index == 3 %}
-                                        🥉
-                                    {% else %}
-                                        {{ loop.index }}
-                                    {% endif %}
-                                </th>
+                                {% if loop.index == 1 %}
+                                    🥇
+                                {% elif loop.index == 2 %}
+                                    🥈
+                                {% elif loop.index == 3 %}
+                                    🥉
+                                {% else %}
+                                    {{ loop.index }}
+                                {% endif %}
                             </th>
                             <td>{{ score.name }}</td>
                             <td>{{ score.score }}</td>
