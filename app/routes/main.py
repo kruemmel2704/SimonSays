@@ -1,7 +1,8 @@
 import json
 from flask import Blueprint, render_template
-from app import db, socketio
-from app.models import Highscore
+from app import socketio
+# from app.models import Highscore # Removed
+from app.repository import get_top_highscores
 from flask_socketio import emit
 
 # Blueprint definieren
@@ -11,7 +12,7 @@ main_bp = Blueprint('main', __name__)
 def dashboard():
     """Die Hauptseite mit den Highscores."""
     # Top 10 Highscores aus der DB laden
-    scores = Highscore.query.order_by(Highscore.score.desc()).limit(10).all()
+    scores = get_top_highscores(limit=10)
     return render_template('dashboard.html', scores=scores)
 
 @main_bp.route('/remote')
@@ -43,7 +44,8 @@ def handle_submit_highscore(data):
 
 @socketio.on('request_highscores')
 def handle_request_highscores():
-    scores = Highscore.query.order_by(Highscore.score.desc()).limit(10).all()
+    # scores = Highscore.query.order_by(Highscore.score.desc()).limit(10).all()
     # Serialize
-    scores_list = [s.to_dict() for s in scores]
+    # scores_list = [s.to_dict() for s in scores]
+    scores_list = get_top_highscores(limit=10)
     emit('update_highscores', scores_list)

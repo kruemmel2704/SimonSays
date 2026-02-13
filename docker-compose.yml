@@ -7,9 +7,30 @@ services:
     privileged: true
     ports:
       - "5000:5000"
+    depends_on:
+      - db
     environment:
       - PYTHONUNBUFFERED=1
       - GPIOZERO_PIN_FACTORY=lgpio
+      - MYSQL_HOST=db
+      - MYSQL_USER=simon
+      - MYSQL_PASSWORD=simon123
+      - MYSQL_DB=simon_says
     devices:
       - /dev/gpiomem:/dev/gpiomem
     restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    container_name: simon_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: simon_says
+      MYSQL_USER: simon
+      MYSQL_PASSWORD: simon123
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  db_data:

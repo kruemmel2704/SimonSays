@@ -15,7 +15,10 @@ def create_app():
     app.config['SECRET_KEY'] = 'simon_secret_key'
 
     # Extensions initialisieren
-    db.init_app(app)
+    # db.init_app(app) # SQLAlchemy raus
+    from app import db as my_db
+    my_db.init_app(app)
+    
     # Wir erzwingen 'threading' mode, da wir manuell Threads starten und eventlet Konflikte verursacht
     socketio.init_app(app, cors_allowed_origins="*", async_mode="threading")
 
@@ -27,8 +30,9 @@ def create_app():
 
     # Datenbankmodelle laden und Tabellen erstellen
     with app.app_context():
-        from app import models
-        db.create_all()
+        # from app import models # Models via Repo ersetzt
+        # db.create_all()
+        my_db.init_db()
 
     # WICHTIG: Import hier, um Zirkelbezüge zu vermeiden
     from app.gpio_logic import SimonSaysGame

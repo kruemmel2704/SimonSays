@@ -1,6 +1,6 @@
 gpiozero
 rpi-lgpio
 flask
-flask-sqlalchemy
+mysql-connector-python
 flask-socketio
 eventlet

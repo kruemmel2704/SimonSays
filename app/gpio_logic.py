@@ -250,18 +250,20 @@ class SimonSaysGame:
         print(f"Name erhalten: {name} für Score: {self.current_score}")
         
         # In die DB speichern (im App Context)
-        from app import db
-        from app.models import Highscore
-        from flask import current_app
+        # from app import db
+        # from app.models import Highscore
+        from app.repository import add_highscore
+        # from flask import current_app
 
         # Workaround: Da wir hier im Thread sind, müssen wir sicherstellen, dass wir einen App Context haben
         # Meistens wird diese Funktion aber vom Main-Thread (Flask Request) aufgerufen, da passt es.
         # Falls es vom Socket-Thread kommt, ist auch ein Context da.
         
         try:
-            hs = Highscore(name=name, score=self.current_score)
-            db.session.add(hs)
-            db.session.commit()
+            # hs = Highscore(name=name, score=self.current_score)
+            # db.session.add(hs)
+            # db.session.commit()
+            add_highscore(name, self.current_score)
             print("Highscore gespeichert.")
             
             # Frontend aktualisieren
