@@ -14,3 +14,4 @@ app/routes/__pycache__/main.cpython-314.pyc
 app/routes/__pycache__/remote.cpython-314.pyc
 app/simon.db
 app/__pycache__/models.cpython-314.pyc
+/app/db.py
