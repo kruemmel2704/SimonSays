@@ -34,7 +34,13 @@
                             </th>
                             <td>{{ score.name }}</td>
                             <td>{{ score.score }}</td>
-                            <td>{{ score.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
+                            <td>
+                                {% if score.timestamp is string %}
+                                    {{ score.timestamp[:16].replace('T', ' ') }}
+                                {% else %}
+                                    {{ score.timestamp.strftime('%d.%m.%Y %H:%M') }}
+                                {% endif %}
+                            </td>
                         </tr>
                         {% else %}
                         <tr>

@@ -54,6 +54,7 @@ class SimonSaysGame:
         # Einstellungen
         self.flash_delay = FLASH_DELAY
         self.sequence_pause = SEQUENCE_PAUSE
+        self.current_difficulty = "medium"
         
         # WICHTIG: Hier speichern wir Web-Klicks zwischen
         self.remote_input_queue = None
@@ -105,6 +106,7 @@ class SimonSaysGame:
             cfg = DIFFICULTY_SETTINGS[level]
             self.flash_delay = cfg['flash']
             self.sequence_pause = cfg['pause']
+            self.current_difficulty = level
             
             # Feedback ans Frontend
             self._emit('difficulty_changed', {'level': level})

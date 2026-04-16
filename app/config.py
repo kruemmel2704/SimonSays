@@ -3,14 +3,17 @@ import platform
 import os
 
 # Setze Pin Factory auf Mock, BEVOR gpiozero importiert wird oder Hardware initialisiert wird
-IS_RASPI = platform.machine().startswith('arm') or platform.machine().startswith('aarch64')
-if os.name == 'nt': 
+# Apple Silicon Macs also report 'arm64', so we check for 'Linux' as well
+machine = platform.machine().lower()
+system = platform.system().lower()
+IS_RASPI = ("arm" in machine or "aarch64" in machine) and system == "linux"
+
+if os.name == 'nt' or system == 'darwin': 
     IS_RASPI = False
 
 if not IS_RASPI:
     # Dies verhindert, dass gpiozero nach RPi.GPIO sucht und abstürzt
     os.environ['GPIOZERO_PIN_FACTORY'] = 'mock'
-    # os.environ['GPIOZERO_PIN_FACTORY'] = 'native' # Alternative falls mock zickt
 
 from gpiozero import LED, Button, Buzzer
  

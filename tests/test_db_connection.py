@@ -9,16 +9,10 @@ from app.db import get_db, init_db
 from flask import Flask
 
 app = Flask(__name__)
-# Configure for testing
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'simon'
-app.config['MYSQL_PASSWORD'] = 'simon123'
-app.config['MYSQL_DB'] = 'simon_says'
+# Read from config file
+app.config.from_object('app.config')
 
-# Or read from config file
-# app.config.from_object('app.config')
-
-print("Testing Database Connection...")
+print("Testing Database Connection (SQLite)...")
 
 try:
     with app.app_context():
@@ -31,6 +25,7 @@ try:
         from app.repository import add_highscore, get_top_highscores
         
         print("Adding Highscore...")
+        # Clean old test data if exists
         add_highscore("TestBot", 999)
         
         print("Reading Highscores...")

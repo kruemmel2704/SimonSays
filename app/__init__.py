@@ -5,7 +5,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 # Global verfügbar machen
 socketio = SocketIO()
-db = SQLAlchemy()
 game_instance = None
 
 def create_app():
@@ -15,9 +14,8 @@ def create_app():
     app.config['SECRET_KEY'] = 'simon_secret_key'
 
     # Extensions initialisieren
-    # db.init_app(app) # SQLAlchemy raus
-    from app import db as my_db
-    my_db.init_app(app)
+    from app import db as my_db_module
+    my_db_module.init_app(app)
     
     # Wir erzwingen 'threading' mode, da wir manuell Threads starten und eventlet Konflikte verursacht
     socketio.init_app(app, cors_allowed_origins="*", async_mode="threading")
@@ -32,7 +30,7 @@ def create_app():
     with app.app_context():
         # from app import models # Models via Repo ersetzt
         # db.create_all()
-        my_db.init_db()
+        my_db_module.init_db()
 
     # WICHTIG: Import hier, um Zirkelbezüge zu vermeiden
     from app.gpio_logic import SimonSaysGame

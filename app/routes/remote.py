@@ -16,6 +16,7 @@ def handle_connect():
     import app
     if app.game_instance:
         emit('led_snapshot', {'states': app.game_instance.get_led_snapshot()})
+        emit('difficulty_changed', {'level': app.game_instance.current_difficulty})
 
 @socketio.on('remote_input', namespace='/remote')
 def handle_remote_input(data):

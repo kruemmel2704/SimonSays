@@ -1,18 +1,18 @@
 
-import mysql.connector
+import sqlite3
 from flask import current_app, g
-from flask.cli import with_appcontext
+import os
 
 def get_db():
     if 'db' not in g:
-        g.db = mysql.connector.connect(
-            host=current_app.config['MYSQL_HOST'],
-            user=current_app.config['MYSQL_USER'],
-            password=current_app.config['MYSQL_PASSWORD'],
-            database=current_app.config['MYSQL_DB']
-        )
-        g.db.row_factory = sqlite3_row_factory_equivalent # mysql connector doesn't have this exactly, but we return dicts in repo usually.
-        # Actually, for mysql-connector, we get cursors.
+        # Get database path from config
+        db_path = current_app.config.get('SQLALCHEMY_DATABASE_URI', '').replace('sqlite:///', '')
+        if not db_path:
+            # Fallback
+            db_path = os.path.join(current_app.root_path, 'simon.db')
+            
+        g.db = sqlite3.connect(db_path)
+        g.db.row_factory = sqlite3.Row  # This allows accessing columns by name
     
     return g.db
 
@@ -27,16 +27,11 @@ def init_db():
     db = get_db()
     cursor = db.cursor()
     
-    # Create database if it doesn't exist? 
-    # Usually the DB should exist, but the table might not.
-    # We can't create the DB from within the connection to the DB itself easily if it doesn't exist.
-    # We assume the DB 'simon_says' exists.
-    
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS highscore (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(50) NOT NULL,
-            score INT NOT NULL,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            score INTEGER NOT NULL,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
