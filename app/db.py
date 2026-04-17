@@ -1,19 +1,15 @@
 
-import sqlite3
+import mysql.connector
 from flask import current_app, g
-import os
 
 def get_db():
     if 'db' not in g:
-        # Get database path from config
-        db_path = current_app.config.get('SQLALCHEMY_DATABASE_URI', '').replace('sqlite:///', '')
-        if not db_path:
-            # Fallback
-            db_path = os.path.join(current_app.root_path, 'simon.db')
-            
-        g.db = sqlite3.connect(db_path)
-        g.db.row_factory = sqlite3.Row  # This allows accessing columns by name
-    
+        g.db = mysql.connector.connect(
+            host=current_app.config['MYSQL_HOST'],
+            user=current_app.config['MYSQL_USER'],
+            password=current_app.config['MYSQL_PASSWORD'],
+            database=current_app.config['MYSQL_DB']
+        )
     return g.db
 
 def close_db(e=None):
@@ -29,9 +25,9 @@ def init_db():
     
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS highscore (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            score INTEGER NOT NULL,
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL,
+            score INT NOT NULL,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
