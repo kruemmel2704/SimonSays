@@ -228,15 +228,13 @@ class SimonSaysGame:
         Blockiert den Game-Loop, bis ein Name über das Dashboard eingegeben wurde.
         """
         self._emit('request_name', {'score': score})
-        print("Warte auf Namenseingabe...")
+        print(f"Warte auf Namenseingabe für Score {score}...")
         
         self.name_received_flag = False
         self.current_score = score # Speichern für on_name_submitted
         
         while not self.name_received_flag:
-            time.sleep(1.0)
-            # Erneut anfordern falls Client neu lädt oder das erste Event verpasst hat
-            self._emit('request_name', {'score': score})
+            time.sleep(0.1)
             
         print("Name empfangen, Spiel wird zurückgesetzt.")
 
