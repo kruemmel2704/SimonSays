@@ -8,7 +8,7 @@ def add_highscore(name, score):
     db = get_db()
     cursor = db.cursor()
     cursor.execute(
-        "INSERT INTO highscore (name, score) VALUES (?, ?)",
+        "INSERT INTO highscore (name, score) VALUES (%s, %s)",
         (name, score)
     )
     db.commit()
@@ -20,23 +20,19 @@ def get_top_highscores(limit=10):
     Format: Liste von Dictionaries mit 'name', 'score', 'timestamp'
     """
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True) # WICHTIG für MySQL: Gibt Dictionaries statt Tuples zurück
     cursor.execute(
-        "SELECT * FROM highscore ORDER BY score DESC LIMIT ?",
+        "SELECT * FROM highscore ORDER BY score DESC LIMIT %s",
         (limit,)
     )
     result = cursor.fetchall()
     
     formatted_result = []
     for row in result:
-        # sqlite3.Row objects behave like dicts, but let's convert to real dict for JSON safety
-        d = dict(row)
-        # Check if timestamp is a string (SQLite often returns strings for dates)
-        # and ensure it's in a consistent format
-        if 'timestamp' in d and d['timestamp'] and hasattr(d['timestamp'], 'isoformat'):
-             d['timestamp'] = d['timestamp'].isoformat()
-        
-        formatted_result.append(d)
+        # Falls timestamp ein datetime Objekt ist, in ISO-Format umwandeln
+        if 'timestamp' in row and row['timestamp'] and hasattr(row['timestamp'], 'isoformat'):
+             row['timestamp'] = row['timestamp'].isoformat()
+        formatted_result.append(row)
         
     cursor.close()
     return formatted_result
