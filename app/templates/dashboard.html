@@ -3,57 +3,70 @@
 {% block title %}Simon Dashboard{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8 mx-auto text-center">
-        <h1 class="mb-4 display-4">🏆 Highscores 🏆</h1>
+<div class="row pt-4">
+    <div class="col-md-9 mx-auto text-center">
+        <h1 class="mb-5 display-4" style="text-shadow: 0 0 20px var(--accent-color);">
+            🛰️ GLOBAL TERMINAL: HIGHSCORES 🛰️
+        </h1>
 
-        <div class="card shadow-lg">
+        <div class="card border-info shadow-lg mb-5" style="background: rgba(10, 0, 25, 0.7); backdrop-filter: blur(20px);">
+            <div class="card-header border-info bg-transparent py-3">
+                <h3 class="m-0 h4" style="color: var(--accent-color);">TOP SCORES</h3>
+            </div>
             <div class="card-body p-0">
-                <table class="table table-dark table-striped table-hover mb-0" id="highscore-table">
-                    <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Name</th>
-                            <th scope="col">Score</th>
-                            <th scope="col">Datum</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for score in scores %}
-                        <tr>
-                            <th scope="row">
-                                {% if loop.index == 1 %}
-                                    🥇
-                                {% elif loop.index == 2 %}
-                                    🥈
-                                {% elif loop.index == 3 %}
-                                    🥉
-                                {% else %}
-                                    {{ loop.index }}
-                                {% endif %}
-                            </th>
-                            <td>{{ score.name }}</td>
-                            <td>{{ score.score }}</td>
-                            <td>
-                                {% if score.timestamp is string %}
-                                    {{ score.timestamp[:16].replace('T', ' ') }}
-                                {% else %}
-                                    {{ score.timestamp.strftime('%d.%m.%Y %H:%M') }}
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="4" class="text-light py-3">Noch keine Spiele gespielt. Sei der Erste!</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0" id="highscore-table">
+                        <thead class="text-info" style="border-bottom: 2px solid var(--accent-color);">
+                            <tr>
+                                <th scope="col" class="py-3">RANK</th>
+                                <th scope="col" class="py-3">PLAYER</th>
+                                <th scope="col" class="py-3">SCORE</th>
+                                <th scope="col" class="py-3">FIX DATE</th>
+                            </tr>
+                        </thead>
+                        <tbody style="font-family: 'Roboto Mono', monospace;">
+                            {% for score in scores %}
+                            <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.1);">
+                                <th scope="row" class="py-3">
+                                    {% if loop.index == 1 %}
+                                        <span style="font-size: 1.5rem;">🥇</span>
+                                    {% elif loop.index == 2 %}
+                                        <span style="font-size: 1.3rem;">🥈</span>
+                                    {% elif loop.index == 3 %}
+                                        <span style="font-size: 1.1rem;">🥉</span>
+                                    {% else %}
+                                        {{ loop.index }}
+                                    {% endif %}
+                                </th>
+                                <td class="py-3 fw-bold text-white">{{ score.name }}</td>
+                                <td class="py-3">
+                                    <span class="badge bg-info text-dark px-3 py-2" style="box-shadow: 0 0 10px var(--accent-color);">
+                                        {{ score.score }}
+                                    </span>
+                                </td>
+                                <td class="py-3 text-muted">
+                                    {% if score.timestamp is string %}
+                                        {{ score.timestamp[:16].replace('T', ' ') }}
+                                    {% else %}
+                                        {{ score.timestamp.strftime('%d.%m.%Y %H:%M') }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-info py-5 opacity-75">NO DATA FOUND IN SYSTEM. BE THE FIRST?</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
         <div class="mt-4">
-            <a href="/remote" class="btn btn-outline-info btn-lg">Jetzt spielen & Fernsteuern</a>
+            <a href="/remote" class="btn btn-info btn-lg px-5 py-3 fw-bold" style="box-shadow: 0 0 20px var(--accent-color);">
+                INITIATE REMOTE CONTROL
+            </a>
         </div>
     </div>
 </div>
@@ -140,11 +153,15 @@
                 });
 
                 const row = `
-                    <tr>
-                        <th scope="row">${index + 1}</th>
-                        <td>${s.name}</td>
-                        <td><span class="badge bg-warning text-dark">${s.score}</span></td>
-                        <td>${date}</td>
+                    <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.1);">
+                        <th scope="row" class="py-3">${index + 1}</th>
+                        <td class="py-3 fw-bold text-white">${s.name}</td>
+                        <td class="py-3">
+                            <span class="badge bg-info text-dark px-3 py-2" style="box-shadow: 0 0 10px var(--accent-color);">
+                                ${s.score}
+                            </span>
+                        </td>
+                        <td class="py-3 text-muted">${date}</td>
                     </tr>
                 `;
                 tableBody.insertAdjacentHTML('beforeend', row);

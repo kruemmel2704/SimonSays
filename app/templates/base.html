@@ -14,75 +14,133 @@
 
     <style>
         :root {
-            --bg-dark: #0f0f0f;
-            --card-bg: #1a1a1a;
-            --accent-color: #00d1b2;
+            --bg-dark: #0a1128;
+            --purple-deep: #0d001a;
+            --purple-gradient: linear-gradient(to bottom, #0d001a 0%, #2b0054 50%, #4a0080 100%);
+            --card-bg: rgba(25, 0, 50, 0.6);
+            --accent-color: #ff00ff; /* Neon Purple */
             --text-main: #e0e0e0;
+            --neon-pink: #ff007f;
+            --neon-blue: #00d2ff;
         }
 
-        body {
-            background-color: var(--bg-dark);
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            min-height: 100vh;
+            background-color: var(--purple-deep) !important;
+            background-image: var(--purple-gradient) !important;
+            background-attachment: fixed;
             color: var(--text-main);
             font-family: 'Roboto', sans-serif;
-            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        h1,
-        h2,
-        h3,
-        .navbar-brand {
+        /* 
+         * GLOBAL RETROWAVE DECORATIONS 
+         */
+        #bg-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .cyber-grid {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 100%; height: 85%;
+            background-image: 
+                linear-gradient(rgba(255, 0, 255, 0.25) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 0, 255, 0.25) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: center bottom;
+            transform: perspective(300px) rotateX(60deg);
+            animation: grid-move 5s linear infinite;
+            mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 90%);
+            -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 90%);
+        }
+
+        .cyber-sun {
+            position: absolute;
+            bottom: 35%; left: 50%;
+            transform: translateX(-50%);
+            width: min(75vw, 380px);
+            height: min(75vw, 380px);
+            background: linear-gradient(to bottom, var(--neon-pink) 0%, #ff8c00 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 50px var(--neon-pink);
+            opacity: 0.5;
+            mask-image: repeating-linear-gradient(transparent, transparent 10px, black 12px, black 22px);
+            -webkit-mask-image: repeating-linear-gradient(transparent, transparent 10px, black 12px, black 22px);
+            animation: sun-pulse 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes grid-move {
+            from { background-position: center 0; }
+            to { background-position: center 50px; }
+        }
+
+        @keyframes sun-pulse {
+            from { transform: translateX(-50%) scale(1); }
+            to { transform: translateX(-50%) scale(1.04); }
+        }
+
+        /* DATA STREAMS */
+        .shooting-light {
+            position: fixed;
+            bottom: -200px;
+            width: 3px; height: 130px;
+            background: linear-gradient(to top, transparent, #fff, var(--accent-color));
+            box-shadow: 0 0 20px var(--accent-color);
+            opacity: 0;
+            animation: shoot-up 5s infinite ease-in;
+            z-index: 1;
+        }
+
+        @keyframes shoot-up {
+            0% { transform: translateY(0); opacity: 0; }
+            15% { opacity: 0.7; }
+            85% { opacity: 0.7; }
+            100% { transform: translateY(-130vh); opacity: 0; }
+        }
+
+        h1, h2, h3, .navbar-brand {
             font-family: 'Orbitron', sans-serif;
             text-transform: uppercase;
             letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--accent-color);
         }
 
         .navbar {
-            background-color: rgba(26, 26, 26, 0.95) !important;
+            background-color: rgba(10, 0, 26, 0.8) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-bottom: 2px solid var(--accent-color);
-            box-shadow: 0 4px 15px rgba(0, 209, 178, 0.2);
+            z-index: 1000;
         }
 
-        .nav-link {
-            color: #ffffff !important;
-            transition: 0.3s;
-            margin: 0 10px;
-        }
-
-        .nav-link:hover {
+        .nav-link { color: #fff !important; transition: 0.3s; }
+        .nav-link.active, .nav-link:hover {
             color: var(--accent-color) !important;
             text-shadow: 0 0 10px var(--accent-color);
         }
 
-        .nav-link.active {
-            color: var(--accent-color) !important;
+        main {
+            position: relative;
+            z-index: 100;
         }
 
-        /* Gemeinsame Karten-Styles */
         .card {
-            background-color: var(--card-bg);
-            border: 1px solid #333;
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 0, 255, 0.2);
+            border-radius: 20px;
             color: white;
-            border-radius: 15px;
             overflow: hidden;
-        }
-
-        .btn-outline-info {
-            color: var(--accent-color);
-            border-color: var(--accent-color);
-        }
-
-        .btn-outline-info:hover {
-            background-color: var(--accent-color);
-            color: #000;
-            box-shadow: 0 0 15px var(--accent-color);
-        }
-
-        footer {
-            margin-top: auto;
-            padding: 20px 0;
-            text-align: center;
-            font-size: 0.8rem;
-            color: #555;
         }
     </style>
 
@@ -90,6 +148,18 @@
 </head>
 
 <body class="d-flex flex-column">
+
+    <!-- Global Cyberpunk Background -->
+    <div id="bg-container">
+        <div class="cyber-grid"></div>
+        <div class="cyber-sun"></div>
+    </div>
+    
+    <!-- Shooting Lights (Data Streams) -->
+    <div class="shooting-light" style="left: 15%; animation-delay: 0s;"></div>
+    <div class="shooting-light" style="left: 45%; animation-delay: 1.2s;"></div>
+    <div class="shooting-light" style="left: 75%; animation-delay: 0.5s;"></div>
+    <div class="shooting-light" style="left: 25%; animation-delay: 3.3s;"></div>
 
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top mb-4">
         <div class="container">

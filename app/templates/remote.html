@@ -9,94 +9,44 @@
      */
     body,
     html {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        /* Force background override */
-        background: #0a0014 !important;
-        background-image: linear-gradient(to bottom, #0a0014 0%, #2b0054 50%, #52006a 100%) !important;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        overflow-x: hidden;
         user-select: none;
-        color: #ddd;
+        overflow-x: hidden;
     }
 
-    /* 
-     * CYBERPUNK RETROWAVE EFFECTS on BODY 
+    /*
+     * MAIN CONTAINER
      */
-    body::before {
-        content: "";
-        position: fixed;
-        bottom: 0; left: 0;
-        width: 100%; height: 100%;
-        z-index: -1;
+    .simon-wrapper {
+        position: relative;
+        width: 100%;
+        min-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        /* Subtle mesh pattern overlay */
         background-image: 
-            linear-gradient(rgba(0, 210, 255, 0.4) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 210, 255, 0.4) 1px, transparent 1px);
-        background-size: 50px 50px;
-        background-position: center bottom;
-        transform: perspective(300px) rotateX(60deg) translateY(0);
-        animation: grid-move 5s linear infinite;
-        mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 80%);
-        -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 80%);
+            radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+        background-size: 40px 40px;
     }
 
-    body::after {
-        content: "";
-        position: fixed;
-        bottom: 35%; left: 50%;
-        transform: translateX(-50%);
-        width: min(80vw, 400px);
-        height: min(80vw, 400px);
-        background: linear-gradient(to bottom, #ff007f 0%, #ff8c00 100%);
-        border-radius: 50%;
-        box-shadow: 0 0 80px #ff007f;
-        opacity: 0.8;
-        z-index: -2;
-        mask-image: repeating-linear-gradient(transparent, transparent 10px, black 15px, black 25px);
-        -webkit-mask-image: repeating-linear-gradient(transparent, transparent 10px, black 15px, black 25px);
-        /* Fallback if mask fails */
-        animation: sun-pulse 4s ease-in-out infinite alternate;
-    }
-
-    @keyframes grid-move {
-        from { background-position: center 0; }
-        to { background-position: center 50px; }
-    }
-
-    @keyframes sun-pulse {
-        from { transform: translateX(-50%) scale(1); filter: brightness(1); }
-        to { transform: translateX(-50%) scale(1.05); filter: brightness(1.2); }
-    }
-
-    /* 
-     * SHOOTING LIGHTS (DATA STREAMS) 
+    /*
+     * MAIN CONTAINER
      */
-    .shooting-light {
-        position: fixed;
-        bottom: -200px;
-        width: 4px;
-        height: 150px;
-        background: linear-gradient(to top, transparent, #fff, #00d2ff);
-        box-shadow: 0 0 30px #00d2ff;
-        z-index: 1; /* Above background, below main content */
-        opacity: 0;
-        animation: shoot-up 4s infinite ease-in;
-        pointer-events: none;
-    }
-
-    .sl-1 { left: 10%; animation-delay: 0s; }
-    .sl-2 { left: 30%; animation-delay: 1.5s; }
-    .sl-3 { left: 50%; animation-delay: 0.8s; }
-    .sl-4 { left: 70%; animation-delay: 2.5s; }
-    .sl-5 { left: 90%; animation-delay: 3.2s; }
-
-    @keyframes shoot-up {
-        0% { transform: translateY(0); opacity: 0; }
-        15% { opacity: 1; }
-        85% { opacity: 1; }
-        100% { transform: translateY(-130vh); opacity: 0; }
+    .simon-wrapper {
+        position: relative;
+        width: 100%;
+        min-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        /* Subtle mesh pattern overlay */
+        background-image: 
+            radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+        background-size: 40px 40px;
     }
 
     /*
@@ -341,16 +291,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- Cyberpunk Background Layer -->
-<div class="bg-fixed-layer"></div>
-
-<!-- Cyberpunk Background Elements -->
-<div class="shooting-light sl-1"></div>
-<div class="shooting-light sl-2"></div>
-<div class="shooting-light sl-3"></div>
-<div class="shooting-light sl-4"></div>
-<div class="shooting-light sl-5"></div>
-
 <div class="simon-wrapper" style="margin-top: -2rem">
     <!-- Back button removed (Navbar is used) -->
     <div class="game-board">
