@@ -1,18 +1,22 @@
 import time
 import random
 import threading
-from gpiozero import LED, Button, Buzzer, Device
+from gpiozero import LED, Button, Buzzer, Device, DigitalOutputDevice, DigitalInputDevice
 from gpiozero.exc import BadPinFactory
 from gpiozero.pins.mock import MockFactory
 
 # Wir importieren die Konfiguration
-from app.config import HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE, IS_RASPI, DIFFICULTY_SETTINGS, DIFFICULTY_BUTTONS
+from app.config import (
+    HARDWARE_SETUP, BUZZER_PIN, FLASH_DELAY, SEQUENCE_PAUSE, 
+    IS_RASPI, DIFFICULTY_SETTINGS, DIFFICULTY_BUTTONS,
+    SNES_PINS, SNES_MAPPING
+)
 
 # Lokaler Mock-Import, falls wir nicht auf dem Pi sind
 if not IS_RASPI:
     print("Versuche mock_gpio_gui zu laden...")
     try:
-        from mock_gpio_gui import LED, Button, Buzzer, Device
+        from mock_gpio_gui import LED, Button, Buzzer, Device, DigitalOutputDevice, DigitalInputDevice
         print("GUI-Emulator geladen.")
     except ImportError as e:
         print(f"Fehler beim Laden von mock_gpio_gui: {e}")
@@ -71,11 +75,25 @@ class SimonSaysGame:
         for level, pin in DIFFICULTY_BUTTONS.items():
             try:
                 btn = Button(pin)
-                # Lambda with default arg to capture the current level value
                 btn.when_pressed = lambda l=level: self.set_difficulty(l)
                 self.diff_btns.append(btn)
             except Exception as e:
                 print(f"Fehler bei Difficulty Button {level} (Pin {pin}): {e}")
+
+        # SNES Controller
+        try:
+            self.snes_latch = DigitalOutputDevice(SNES_PINS["LATCH"])
+            self.snes_clock = DigitalOutputDevice(SNES_PINS["CLOCK"])
+            self.snes_data = DigitalInputDevice(SNES_PINS["DATA"], pull_up=True)
+            self.snes_enabled = True
+        except Exception as e:
+            print(f"SNES Controller konnte nicht initialisiert werden: {e}")
+            self.snes_enabled = False
+
+        self.snes_button_names = [
+            "B", "Y", "SELECT", "START", "UP", "DOWN", "LEFT", "RIGHT",
+            "A", "X", "L", "R", "-", "-", "-", "-"
+        ]
             
     def _emit(self, event, data):
         """Hilfsfunktion sendet Daten an Flask"""
@@ -121,6 +139,40 @@ class SimonSaysGame:
                 except:
                     pass
 
+    # --- SNES CONTROLLER LOGIK ---
+    def read_snes_controller(self):
+        """Liest die 16 Bits vom SNES Controller ein."""
+        if not self.snes_enabled:
+            return [1] * 16 # Alles ungedrückt (High bei PUD_UP)
+
+        bits = []
+        # Latch Puls
+        self.snes_latch.on()
+        time.sleep(0.00002)
+        self.snes_latch.off()
+        time.sleep(0.00002)
+
+        # 16 Bits schieben
+        for _ in range(16):
+            bits.append(1 if self.snes_data.is_active else 0)
+            self.snes_clock.on()
+            time.sleep(0.00002)
+            self.snes_clock.off()
+            time.sleep(0.00002)
+        
+        return bits
+
+    def read_pressed_snes_buttons(self):
+        """Gibt eine Liste der aktuell gedrückten SNES-Button-Namen zurück."""
+        bits = self.read_snes_controller()
+        pressed = []
+        for i, bit in enumerate(bits):
+            if i < len(self.snes_button_names):
+                name = self.snes_button_names[i]
+                if name != "-" and bit == 0:
+                    pressed.append(name)
+        return pressed
+
     # --- SCHNITTSTELLE ZUM WEB (WICHTIG!) ---
     def process_remote_input(self, color):
         """Wird von remote.py aufgerufen, wenn jemand im Browser klickt"""
@@ -164,7 +216,7 @@ class SimonSaysGame:
     def wait_for_any_button(self):
         """
         Der Kern der Hybrid-Steuerung:
-        Wartet auf Hardware-Button ODER Web-Input.
+        Wartet auf Hardware-Button, Web-Input ODER SNES-Controller.
         """
         # Queue leeren vor neuer Eingabe
         self.remote_input_queue = None
@@ -173,18 +225,26 @@ class SimonSaysGame:
             # A) Check Hardware Buttons
             for color, btn in self.buttons.items():
                 if btn.is_pressed:
-                    # Entprellen (warten bis losgelassen)
-                    while btn.is_pressed:
-                        time.sleep(0.01)
+                    while btn.is_pressed: time.sleep(0.01)
                     return color
 
             # B) Check Web Input
             if self.remote_input_queue:
                 color = self.remote_input_queue
-                self.remote_input_queue = None # Reset
-                return color
+                self.remote_input_queue = None 
+                if color in self.colors: return color
             
-            # CPU schonen
+            # C) Check SNES Controller
+            snes_pressed = self.read_pressed_snes_buttons()
+            for snes_btn in snes_pressed:
+                if snes_btn in SNES_MAPPING:
+                    target = SNES_MAPPING[snes_btn]
+                    if target in self.colors:
+                        # Warten bis losgelassen
+                        while snes_btn in self.read_pressed_snes_buttons():
+                            time.sleep(0.01)
+                        return target
+            
             time.sleep(0.01)
 
     def get_player_input(self):
@@ -301,6 +361,15 @@ class SimonSaysGame:
                     # 2. Web Start?
                     if self.remote_input_queue:
                         self.remote_input_queue = None
+                        for wave_color in self.colors:
+                            self._set_led_state(wave_color, False)
+                        time.sleep(0.5)
+                        return
+                    
+                    # 3. SNES Start?
+                    snes_pressed = self.read_pressed_snes_buttons()
+                    if snes_pressed:
+                        # Jede Taste am SNES startet das Spiel
                         for wave_color in self.colors:
                             self._set_led_state(wave_color, False)
                         time.sleep(0.5)

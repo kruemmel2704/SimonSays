@@ -69,6 +69,22 @@ DIFFICULTY_BUTTONS = {
     "hard": 16
 }
 
+# SNES Controller Konfiguration
+SNES_PINS = {
+    "LATCH": 9,
+    "CLOCK": 11,
+    "DATA": 10
+}
+
+# Mapping: Welcher SNES-Button macht was im Spiel?
+SNES_MAPPING = {
+    "Y": "green",
+    "A": "red",
+    "X": "blue",
+    "B": "yellow",
+    "START": "START_SIGNAL"
+}
+
 # Datenbank-Konfiguration
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))
