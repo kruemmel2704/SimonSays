@@ -94,7 +94,33 @@ class SimonSaysGame:
             "B", "Y", "SELECT", "START", "UP", "DOWN", "LEFT", "RIGHT",
             "A", "X", "L", "R", "-", "-", "-", "-"
         ]
+
+        self._print_hardware_report()
+
+    def _print_hardware_report(self):
+        """Gibt eine Übersicht der Hardware-Initialisierung aus."""
+        print("\n--- SIMON SAYS HARDWARE REPORT ---")
+        print(f"Modus: {'RASPBERRY PI' if IS_RASPI else 'EMULATOR/MOCK'}")
+        
+        print("\nLEDs & Buttons:")
+        for color, pins in HARDWARE_SETUP.items():
+            led_ok = "OK" if self.leds.get(color) else "FAIL"
+            btn_ok = "OK" if self.buttons.get(color) else "FAIL"
+            print(f"  - {color.upper():7}: LED (Pin {pins['led']}) [{led_ok}], Button (Pin {pins['btn']}) [{btn_ok}]")
             
+        print("\nSNES Controller:")
+        if self.snes_enabled:
+            print(f"  - LATCH: Pin {SNES_PINS['LATCH']} [OK]")
+            print(f"  - CLOCK: Pin {SNES_PINS['CLOCK']} [OK]")
+            print(f"  - DATA : Pin {SNES_PINS['DATA']}  [OK]")
+        else:
+            print("  - Status: DEAKTIVIERT oder FEHLER")
+            
+        print("\nSonstiges:")
+        print(f"  - Buzzer: Pin {BUZZER_PIN} [{'OK' if hasattr(self, 'buzzer') else 'FAIL'}]")
+        print(f"  - Difficulty Buttons: {len(self.diff_btns)} initialisiert")
+        print("----------------------------------\n")
+
     def _emit(self, event, data):
         """Hilfsfunktion sendet Daten an Flask"""
         # print(f"Logic: _emit {event}") 
