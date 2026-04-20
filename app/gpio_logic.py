@@ -124,7 +124,7 @@ class SimonSaysGame:
     # --- SCHNITTSTELLE ZUM WEB (WICHTIG!) ---
     def process_remote_input(self, color):
         """Wird von remote.py aufgerufen, wenn jemand im Browser klickt"""
-        if color in self.colors:
+        if color in self.colors or color == "START_SIGNAL":
             print(f"Game-Logik empfängt Web-Input: {color}")
             self.remote_input_queue = color
         else:

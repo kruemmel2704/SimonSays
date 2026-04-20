@@ -45,6 +45,13 @@ def handle_difficulty(data):
         print(f"Schwierigkeit auf {level} gesetzt")
         emit('difficulty_changed', {'level': level}, broadcast=True, namespace='/remote')
 
+@socketio.on('start_game', namespace='/remote')
+def handle_start_game():
+    print("Start-Signal vom Web empfangen")
+    import app
+    if app.game_instance:
+        app.game_instance.process_remote_input("START_SIGNAL")
+
 @socketio.on('request_led_snapshot', namespace='/remote')
 def handle_request_led_snapshot():
     """Erlaubt dem Frontend ein aktives Nachziehen des Live-Zustands."""

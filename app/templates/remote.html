@@ -287,6 +287,54 @@
         box-shadow: 0 0 20px rgba(0, 210, 255, 0.5);
         transform: translateY(-2px);
     }
+
+    /* Start Button CSS */
+    .btn-start {
+        background: linear-gradient(135deg, #ff00ff 0%, #ff007f 100%);
+        color: #fff;
+        border: none;
+        padding: 10px 30px;
+        border-radius: 25px;
+        font-family: 'Orbitron', sans-serif;
+        font-weight: 700;
+        letter-spacing: 2px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 15px rgba(255, 0, 255, 0.4);
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        animation: pulse-start 2s infinite;
+    }
+
+    .btn-start:hover {
+        transform: scale(1.05) translateY(-2px);
+        box-shadow: 0 0 25px rgba(255, 0, 255, 0.7);
+        filter: brightness(1.2);
+    }
+
+    .btn-start:active {
+        transform: scale(0.95);
+    }
+
+    .btn-start:disabled {
+        background: #333;
+        color: #666;
+        box-shadow: none;
+        cursor: not-allowed;
+        animation: none;
+    }
+
+    @keyframes pulse-start {
+        0% { box-shadow: 0 0 15px rgba(255, 0, 255, 0.4); }
+        50% { box-shadow: 0 0 30px rgba(255, 0, 255, 0.8); }
+        100% { box-shadow: 0 0 15px rgba(255, 0, 255, 0.4); }
+    }
+
+    .divider-v {
+        width: 1px;
+        height: 30px;
+        background: rgba(255, 255, 255, 0.1);
+        align-self: center;
+    }
 </style>
 {% endblock %}
 
@@ -308,6 +356,13 @@
     </div>
 
     <div class="controls-container">
+        <!-- Start Button -->
+        <button id="start-btn" class="btn-start">
+            START
+        </button>
+        
+        <div class="divider-v"></div>
+
         {% for level in difficulty_settings.keys() %}
         <button class="diff-btn" data-level="{{ level }}">
             {{ level }}
@@ -459,9 +514,31 @@
             btn.addEventListener('touchstart', handleInput, { passive: false });
         });
 
-        // Difficulty Buttons
+        // Difficulty selection
         DIFF_BTNS.forEach(btn => {
-            btn.addEventListener('click', () => setDifficulty(btn.dataset.level));
+            btn.addEventListener('click', () => {
+                socket.emit('change_difficulty', { level: btn.dataset.level });
+            });
+        });
+
+        // Start Game Logic
+        const startBtn = document.getElementById('start-btn');
+        startBtn.addEventListener('click', () => {
+            socket.emit('start_game');
+            startBtn.disabled = true;
+            startBtn.textContent = 'RUNNING';
+        });
+
+        socket.on('game_over', () => {
+            startBtn.disabled = false;
+            startBtn.textContent = 'START';
+        });
+
+        socket.on('game_status', (data) => {
+            if (data.msg === 'Spiel startet!') {
+                startBtn.disabled = true;
+                startBtn.textContent = 'RUNNING';
+            }
         });
 
         // Watchdog
