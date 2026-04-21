@@ -212,3 +212,30 @@ class Buzzer:
 
     def off(self):
         _get_emulator().set_buzzer(self.pin, False)
+
+
+class DigitalOutputDevice:
+    def __init__(self, pin, **kwargs):
+        self.pin = pin
+
+    def on(self):
+        pass
+
+    def off(self):
+        pass
+
+    @property
+    def value(self):
+        return 0
+
+
+class DigitalInputDevice:
+    def __init__(self, pin, **kwargs):
+        self.pin = pin
+        # SNES Controller sendet 1 (High) für 'nicht gedrückt', daher muss is_active=True sein.
+        self.is_active = True 
+
+    @property
+    def value(self):
+        return 1
+
