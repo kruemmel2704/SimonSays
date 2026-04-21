@@ -4,3 +4,4 @@ mysql-connector-python==8.0.33
 gpiozero==2.0
 RPi.GPIO==0.7.1
 eventlet==0.33.3
+rpi-lgpio
