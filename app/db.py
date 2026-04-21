@@ -1,6 +1,5 @@
 import os
 import sqlite3
-import mysql.connector
 from flask import current_app, g
 
 def get_db():
