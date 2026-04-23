@@ -21,14 +21,12 @@ if not IS_RASPI:
         print("GUI-Emulator geladen.")
     except ImportError as e:
         print(f"Fehler beim Laden von mock_gpio_gui: {e}")
-        print("Fallback auf Standard-Mock (ohne GUI)...")
         try:
             Device.pin_factory = MockFactory()
-        except Exception:
+        except:
             pass
 
 class SilentBuzzer:
-    """Fallback-Buzzer für Umgebungen ohne echte GPIO-Hardware."""
     def on(self): pass
     def off(self): pass
 
@@ -66,26 +64,23 @@ class SimonSaysGame:
                 btn = Button(pin, pull_up=True)
                 btn.when_pressed = lambda l=level: self.set_difficulty(l)
                 self.diff_btns.append(btn)
-            except Exception as e:
-                print(f"Fehler bei Difficulty Button {level} (Pin {pin}): {e}")
+            except: pass
 
-        # SNES Controller Initialisierung mit Schutz vor Ghosting
+        # SNES Controller
         self.snes_enabled = False
         if IS_RASPI:
             try:
                 self.snes_latch = DigitalOutputDevice(SNES_PINS["LATCH"])
                 self.snes_clock = DigitalOutputDevice(SNES_PINS["CLOCK"])
-                # WICHTIG: Pull-Up für Datenleitung, damit das Spiel nicht durch Geister-Signale startet
                 self.snes_data = DigitalInputDevice(SNES_PINS["DATA"], pull_up=True)
                 self.snes_enabled = True
                 
-                # Check ob SNES-Leitung "lebt" (wenn alles 0 ist, ist vermutlich nichts angeschlossen)
-                test_bits = self.read_snes_controller()
-                if all(b == 0 for b in test_bits):
-                    print("Warnung: SNES Controller liefert nur Nullen. Deaktiviere SNES-Input (Floating Pin Schutz).")
+                # Check for ghosting
+                test = self.read_snes_controller()
+                if all(b == 0 for b in test):
+                    print("SNES Ghosting erkannt -> deaktiviert.")
                     self.snes_enabled = False
-            except Exception as e:
-                print(f"SNES Init Fehler: {e}")
+            except:
                 self.snes_enabled = False
 
         self.snes_button_names = [
@@ -96,12 +91,10 @@ class SimonSaysGame:
         self._print_hardware_report()
 
     def _print_hardware_report(self):
-        print("\n--- SIMON SAYS HARDWARE REPORT ---")
-        print(f"Modus: {'RASPBERRY PI' if IS_RASPI else 'EMULATOR/MOCK'}")
-        for color, pins in HARDWARE_SETUP.items():
-            print(f"  - {color.upper():7}: LED (Pin {pins['led']}), Button (Pin {pins['btn']}) [OK]")
-        print(f"SNES Status: {'AKTIV' if self.snes_enabled else 'DEAKTIVIERT'}")
-        print("----------------------------------\n")
+        print("\n--- SIMON SAYS HW ---")
+        print(f"Modus: {'PI' if IS_RASPI else 'MOCK'}")
+        print(f"SNES: {'AN' if self.snes_enabled else 'AUS'}")
+        print("---------------------\n")
 
     def _emit(self, event, data):
         if self.socket_callback:
@@ -114,17 +107,21 @@ class SimonSaysGame:
         else: self.leds[color].off()
         self._emit('led_state', {'color': color, 'state': led_state})
 
-    def get_led_snapshot(self):
-        return dict(self.led_states)
-
     def set_difficulty(self, level):
+        """Ändert Schwierigkeit und gibt LED-Feedback (G=Easy, Y=Mid, R=Hard)"""
         if level in DIFFICULTY_SETTINGS:
-            print(f"Difficulty: {level}")
+            print(f"Difficulty set to: {level}")
             cfg = DIFFICULTY_SETTINGS[level]
             self.flash_delay = cfg['flash']
             self.sequence_pause = cfg['pause']
             self.current_difficulty = level
             self._emit('difficulty_changed', {'level': level})
+            
+            # LED Feedback (Leicht=Grün, Mittel=Gelb, Schwer=Rot)
+            fb = {'easy': 'green', 'medium': 'yellow', 'hard': 'red'}.get(level)
+            if fb:
+                threading.Thread(target=self.flash_led, args=(fb,), daemon=True).start()
+            
             if hasattr(self, 'buzzer'):
                 try:
                     self.buzzer.on()
@@ -139,22 +136,54 @@ class SimonSaysGame:
         time.sleep(0.00001)
         self.snes_latch.off()
         for _ in range(16):
-            # Bei PullUp ist is_active=True wenn Pin LOW (gedrückt)
             bits.append(0 if self.snes_data.is_active else 1)
             self.snes_clock.on()
             time.sleep(0.00001)
             self.snes_clock.off()
         return bits
 
+    def handle_snes_special_buttons(self):
+        """Prüft SELECT (Restart), L/R (Difficulty)"""
+        if not self.snes_enabled: return
+        pressed = []
+        bits = self.read_snes_controller()
+        for i, bit in enumerate(bits):
+            if bit == 0 and i < len(self.snes_button_names):
+                pressed.append(self.snes_button_names[i])
+        
+        if len(pressed) > 10: return # Ghosting
+
+        # 1. SELECT -> RESTART
+        if "SELECT" in pressed:
+            print("RESTART über SNES SELECT")
+            self.game_running = False
+            return True
+
+        # 2. L/R -> DIFFICULTY
+        if "L" in pressed:
+            levels = ['easy', 'medium', 'hard']
+            curr_idx = levels.index(self.current_difficulty)
+            new_idx = max(0, curr_idx - 1)
+            self.set_difficulty(levels[new_idx])
+            while "L" in self.read_pressed_snes_buttons(): time.sleep(0.01) # Debounce
+        
+        if "R" in pressed:
+            levels = ['easy', 'medium', 'hard']
+            curr_idx = levels.index(self.current_difficulty)
+            new_idx = min(2, curr_idx + 1)
+            self.set_difficulty(levels[new_idx])
+            while "R" in self.read_pressed_snes_buttons(): time.sleep(0.01) # Debounce
+            
+        return False
+
     def read_pressed_snes_buttons(self):
         if not self.snes_enabled: return []
         bits = self.read_snes_controller()
         pressed = []
         for i, bit in enumerate(bits):
-            if i < len(self.snes_button_names) and bit == 0:
+            if bit == 0 and i < len(self.snes_button_names):
                 name = self.snes_button_names[i]
                 if name != "-": pressed.append(name)
-        # Plausibilitäts-Check
         if len(pressed) > 10: return []
         return pressed
 
@@ -186,16 +215,20 @@ class SimonSaysGame:
     def play_sequence(self):
         self._emit('game_status', {'msg': 'Simon zeigt...'})
         time.sleep(0.8)
-        print(f"Simon spielt: {self.sequence}")
         for color in self.sequence:
+            # Check for RESTART during Simon phase
+            if self.handle_snes_special_buttons(): return
             self.flash_led(color)
 
     def wait_for_any_button(self):
         while True:
+            # Special SNES Buttons (SELECT/L/R)
+            if self.handle_snes_special_buttons():
+                return "RESTART_SIGNAL"
+
             # A) Hardware
             for color, btn in self.buttons.items():
                 if btn.is_pressed:
-                    print(f"HW-Button: {color}")
                     self._set_led_state(color, True)
                     if hasattr(self, 'buzzer'):
                         try: self.buzzer.on()
@@ -211,7 +244,7 @@ class SimonSaysGame:
             if color in self.colors:
                 self.flash_led(color)
                 return color
-            # C) SNES
+            # C) SNES Game Buttons
             snes_btn = self.read_pressed_snes_buttons()
             if snes_btn:
                 for b in snes_btn:
@@ -227,7 +260,9 @@ class SimonSaysGame:
         self._emit('game_status', {'msg': 'Du bist dran!'})
         self._clear_remote_inputs()
         for expected in self.sequence:
-            if self.wait_for_any_button() != expected:
+            pressed = self.wait_for_any_button()
+            if pressed == "RESTART_SIGNAL": return "RESTART"
+            if pressed != expected:
                 return False
         return True
 
@@ -236,34 +271,32 @@ class SimonSaysGame:
         self._emit('game_over', {'score': score})
         for _ in range(3):
             for c in self.colors: self._set_led_state(c, True)
-            time.sleep(0.3)
+            time.sleep(0.2)
             for c in self.colors: self._set_led_state(c, False)
-            time.sleep(0.3)
+            time.sleep(0.2)
         self.wait_for_name_input(score)
 
     def wait_for_name_input(self, score):
         self._emit('request_name', {'score': score})
         self.name_received_flag = False
-        self.current_score = score
         timer = 300
         while not self.name_received_flag and timer > 0:
             for btn in self.buttons.values():
                 if btn.is_pressed:
                     self.name_received_flag = True
                     return
+            if self.handle_snes_special_buttons():
+                self.name_received_flag = True
+                return
             time.sleep(0.1)
             timer -= 1
 
     def on_name_submitted(self, name):
-        if self.name_received_flag: return
+        if getattr(self, 'name_received_flag', False): return
         self.name_received_flag = True
         from app.repository import add_highscore
-        try:
-            add_highscore(name, self.current_score)
-            from app.routes.main import handle_request_highscores
-            handle_request_highscores()
-        except Exception as e:
-            print(f"DB Error: {e}")
+        try: add_highscore(name, getattr(self, 'current_score', 0))
+        except: pass
 
     def wait_for_start_with_wave(self):
         self._emit('game_status', {'msg': 'Starten?'})
@@ -274,47 +307,43 @@ class SimonSaysGame:
                 self._set_led_state(color, True)
                 end = time.time() + 0.15
                 while time.time() < end:
-                    # Check HW
+                    if self.handle_snes_special_buttons(): pass # Update diffs
                     for c, btn in self.buttons.items():
                         if btn.is_pressed:
-                            print(f"HW-Start: {c}")
-                            self._set_led_state(color, False)
-                            time.sleep(0.5)
-                            return
-                    # Check Web
+                            self._set_led_state(color, False); return
                     if self._pop_remote_input():
-                        self._set_led_state(color, False)
-                        return
-                    # Check SNES
+                        self._set_led_state(color, False); return
                     if self.read_pressed_snes_buttons():
-                        self._set_led_state(color, False)
-                        return
+                        self._set_led_state(color, False); return
                     time.sleep(0.01)
                 self._set_led_state(color, False)
 
     def start_game_loop(self):
-        print("Hardware-Thread aktiv.")
         while True:
             self.wait_for_start_with_wave()
             self.sequence = []
             self.game_running = True
             self._emit('game_status', {'msg': 'GO!'})
-            time.sleep(1)
+            time.sleep(0.8)
             while self.game_running:
                 self.sequence.append(random.choice(self.colors))
                 self.play_sequence()
-                if not self.get_player_input():
+                if not self.game_running: break # Restart signaled during playback
+                res = self.get_player_input()
+                if res == "RESTART": 
+                    self.game_running = False
+                elif not res:
                     self.game_over_signal()
                     self.game_running = False
                 else:
-                    time.sleep(0.5)
+                    time.sleep(0.4)
 
     def get_debug_status(self):
         return {
             'leds': self.led_states,
             'buttons': {c: ('pressed' if b.is_pressed else 'released') for c, b in self.buttons.items()},
             'snes_enabled': self.snes_enabled,
-            'is_raspi': IS_RASPI
+            'diff': self.current_difficulty
         }
 
     def toggle_led_debug(self, color):
