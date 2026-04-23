@@ -25,50 +25,12 @@
         align-items: center;
         justify-content: center;
         z-index: 10;
-        /* Subtle mesh pattern overlay */
-        background-image: 
-            radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+        background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
         background-size: 40px 40px;
     }
 
     /*
-     * MAIN CONTAINER
-     */
-    .simon-wrapper {
-        position: relative;
-        width: 100%;
-        min-height: 85vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-        /* Subtle mesh pattern overlay */
-        background-image: 
-            radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
-        background-size: 40px 40px;
-    }
-
-    /*
-     * MAIN CONTAINER
-     */
-    .simon-wrapper {
-        position: relative;
-        width: 100%;
-        min-height: 85vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 10; /* Ensure this is above the shooting lights */
-        /* Add a very subtle mesh pattern */
-        background-image: 
-            radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
-        background-size: 40px 40px;
-    }
-
-    /*
-     * THE GAME BOARD (THE WHEEL)
+     * THE GAME BOARD
      */
     .game-board {
         position: relative;
@@ -77,11 +39,10 @@
         border-radius: 50%;
         background: radial-gradient(circle, #2a2a2a 0%, #111 100%);
         padding: 15px;
-        box-shadow: 
-            0 30px 60px rgba(0,0,0,0.8),
-            0 0 30px rgba(255, 0, 255, 0.2);
+        box-shadow: 0 30px 60px rgba(0,0,0,0.8), 0 0 30px rgba(255, 0, 255, 0.2);
         border: 2px solid rgba(255, 255, 255, 0.05);
         animation: board-float 6s ease-in-out infinite;
+        perspective: 1000px;
     }
 
     @keyframes board-float {
@@ -98,6 +59,9 @@
         background: #000;
         box-shadow: inset 0 0 40px #000;
         border: 4px solid #111;
+        /* Forced Diamond Rotation */
+        transform: rotate(45deg) !important;
+        -webkit-transform: rotate(45deg) !important;
     }
 
     .simon-btn {
@@ -108,43 +72,33 @@
         transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
-        border: 4px solid rgba(0,0,0,0.4);
+        border: 2px solid rgba(0,0,0,0.4);
         box-sizing: border-box;
-        /* Glossy Glass Look */
         background-image: 
             radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
             radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 80%);
     }
 
-    .simon-btn:hover {
-        opacity: 0.6;
-        transform: scale(0.98);
-        filter: brightness(1.2);
-    }
-
-    /* Positioning the 4 quadrants */
-    #btn-green {
-        top: 0; left: 0;
-        background-color: #00c853;
-        border-top-left-radius: 100%;
-    }
-
-    #btn-red {
+    /* Diamond Layout Mapping */
+    #btn-blue { /* TOP */
         top: 0; right: 0;
-        background-color: #ff1744;
+        background-color: #0044b3;
         border-top-right-radius: 100%;
     }
-
-    #btn-yellow {
+    #btn-red { /* RIGHT */
+        bottom: 0; right: 0;
+        background-color: #b30000;
+        border-bottom-right-radius: 100%;
+    }
+    #btn-yellow { /* BOTTOM */
         bottom: 0; left: 0;
-        background-color: #ffea00;
+        background-color: #b3a400;
         border-bottom-left-radius: 100%;
     }
-
-    #btn-blue {
-        bottom: 0; right: 0;
-        background-color: #2979ff;
-        border-bottom-right-radius: 100%;
+    #btn-green { /* LEFT */
+        top: 0; left: 0;
+        background-color: #008037;
+        border-top-left-radius: 100%;
     }
 
     /*
@@ -187,7 +141,8 @@
     .center-decoration {
         position: absolute;
         top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
+        /* Rotate back -45deg because parent is 45deg */
+        transform: translate(-50%, -50%) rotate(-45deg);
         width: 38%; height: 38%;
         background: #181818;
         border-radius: 50%;
