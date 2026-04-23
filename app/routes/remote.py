@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app
+from flask import Blueprint
 from flask_socketio import emit
 from app import socketio
 
@@ -39,11 +39,7 @@ def handle_difficulty(data):
     import app
 
     if level in DIFFICULTY_SETTINGS and app.game_instance:
-        settings = DIFFICULTY_SETTINGS[level]
-        app.game_instance.flash_delay = settings['flash']
-        app.game_instance.sequence_pause = settings['pause']
-        print(f"Schwierigkeit auf {level} gesetzt")
-        emit('difficulty_changed', {'level': level}, broadcast=True, namespace='/remote')
+        app.game_instance.set_difficulty(level)
 
 @socketio.on('start_game', namespace='/remote')
 def handle_start_game():
@@ -53,6 +49,7 @@ def handle_start_game():
         app.game_instance.process_remote_input("START_SIGNAL")
 
 @socketio.on('request_led_snapshot', namespace='/remote')
+@socketio.on('request_snapshot', namespace='/remote')
 def handle_request_led_snapshot():
     """Erlaubt dem Frontend ein aktives Nachziehen des Live-Zustands."""
     import app

@@ -60,8 +60,9 @@ class SimonSaysGame:
         self.sequence_pause = SEQUENCE_PAUSE
         self.current_difficulty = "medium"
         
-        # WICHTIG: Hier speichern wir Web-Klicks zwischen
-        self.remote_input_queue = None
+        # Eingaben kommen aus Flask-Socket-Threads und werden vom Game-Thread gelesen.
+        self.remote_inputs = []
+        self.remote_input_lock = threading.Lock()
         self.game_running = False
         self.led_states = {color: 'off' for color in self.colors}
 
@@ -201,12 +202,23 @@ class SimonSaysGame:
 
     # --- SCHNITTSTELLE ZUM WEB (WICHTIG!) ---
     def process_remote_input(self, color):
-        """Wird von remote.py aufgerufen, wenn jemand im Browser klickt"""
+        """Wird von remote.py aufgerufen, wenn jemand im Browser klickt."""
         if color in self.colors or color == "START_SIGNAL":
             print(f"Game-Logik empfängt Web-Input: {color}")
-            self.remote_input_queue = color
+            with self.remote_input_lock:
+                self.remote_inputs.append(color)
         else:
             print(f"Ignoriere unbekannte Farbe: {color}")
+
+    def _pop_remote_input(self):
+        with self.remote_input_lock:
+            if not self.remote_inputs:
+                return None
+            return self.remote_inputs.pop(0)
+
+    def _clear_remote_inputs(self):
+        with self.remote_input_lock:
+            self.remote_inputs.clear()
 
     # --- HARDWARE STEUERUNG ---
     def flash_led(self, color):
@@ -244,9 +256,6 @@ class SimonSaysGame:
         Der Kern der Hybrid-Steuerung:
         Wartet auf Hardware-Button, Web-Input ODER SNES-Controller.
         """
-        # Queue leeren vor neuer Eingabe
-        self.remote_input_queue = None
-        
         while True:
             # A) Check Hardware Buttons
             for color, btn in self.buttons.items():
@@ -255,10 +264,9 @@ class SimonSaysGame:
                     return color
 
             # B) Check Web Input
-            if self.remote_input_queue:
-                color = self.remote_input_queue
-                self.remote_input_queue = None 
-                if color in self.colors: return color
+            color = self._pop_remote_input()
+            if color in self.colors:
+                return color
             
             # C) Check SNES Controller
             snes_pressed = self.read_pressed_snes_buttons()
@@ -367,7 +375,7 @@ class SimonSaysGame:
         self._emit('game_status', {'msg': 'Drücke eine Taste zum Starten'})
         wave = self.colors + self.colors[-2:0:-1]
         
-        self.remote_input_queue = None # Reset
+        self._clear_remote_inputs()
         
         while True:
             for color in wave:
@@ -385,8 +393,7 @@ class SimonSaysGame:
                             return
                     
                     # 2. Web Start?
-                    if self.remote_input_queue:
-                        self.remote_input_queue = None
+                    if self._pop_remote_input():
                         for wave_color in self.colors:
                             self._set_led_state(wave_color, False)
                         time.sleep(0.5)
