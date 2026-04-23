@@ -1,16 +1,19 @@
-# Dokumentation: Raspberry Pi Simon Says
+# Dokumentation: Raspberry Pi Simon Says (Cyber-Physical System)
 
 ## 1. Projektübersicht
-Dieses Projekt realisiert das klassische "Simon Says" Gedächtnisspiel. Ein Raspberry Pi 4B steuert vier LEDs und registriert Eingaben über vier Taster. Ziel ist es, eine zufällig generierte und immer länger werdende Sequenz von Lichtsignalen fehlerfrei zu wiederholen. Ein aktiver Buzzer gibt akustisches Feedback zum Spielstatus.
+Dieses Schulprojekt im Fachbereich Informatik/Technik realisiert das klassische "Simon Says" Gedächtnisspiel und demonstriert dabei die Prinzipien eines **Cyber-Physical Systems (CPS)**. Ein Raspberry Pi 4B steuert als zentrale Verarbeitungseinheit vier LEDs (Aktoren) und registriert Eingaben über Taster sowie einen SNES Controller (Sensoren). Ziel ist es, eine zufällig generierte und immer länger werdende Sequenz von Lichtsignalen fehlerfrei zu wiederholen. Ein aktiver Buzzer gibt akustisches Feedback zum Spielstatus. Durch die Integration einer Web-Oberfläche wird das lokale Hardware-System zu einem vollständig vernetzten IoT/CPS-Ökosystem erweitert.
 
-## 2. Hardware-Komponenten
+## 2. Hardware-Komponenten (Physische Schnittstellen)
 
-- Zentraleinheit: Raspberry Pi 4 Model B 
-- Eingabe: 4x Push-Button (Taster).
-- Ausgabe (Optisch): 4x LED (Rot, Grün, Blau, Gelb).
-- Ausgabe (Akustisch): 1x Aktiver Buzzer (Pieper).
-- Widerstände: 4x 220 $\Omega$ (für LEDs).
-- Verkabelung: Jumper-Kabel und Breadboard.
+- **Zentraleinheit**: Raspberry Pi 4 Model B 
+- **Eingabe (Sensoren)**: 
+  - 4x Push-Button (Spiel-Taster: Rot, Grün, Blau, Gelb)
+  - 3x Push-Button (Schwierigkeitsgrad: Easy, Medium, Hard)
+  - 1x SNES Controller (Erweiterte Eingabeschnittstelle über Schieberegister-Protokoll)
+- **Ausgabe (Aktoren)**: 
+  - 4x LED (Optisch: Rot, Grün, Blau, Gelb)
+  - 1x Aktiver Buzzer (Akustisches Feedback)
+- **Elektronik**: 4x 220 $\Omega$ Vorwiderstände (für LEDs), Jumper-Kabel und Breadboard.
 
 ## 3. Anschlussplan (GPIO Belegung)
 
@@ -32,29 +35,87 @@ Die Software nutzt die BCM-Nummerierung. Die Taster sind gegen GND geschaltet (i
 
 <div style="page-break-after: always;"></div>
 
-```plaintext
-          (SD-Karten-Slot Seite)
-         3,3V  [01] [02]  <- Spk (5V) 🔊
-  (I2C) GPIO2  [03] [04]  5V
-  (I2C) GPIO3  [05] [06]  GND ⚫
-        GPIO4  [07] [08]  GPIO14
-          GND  [09] [10]  GPIO15
-🔴 LED (17) -> [11] [12] <- Btn (18) 🔴
-🟢 LED (27) -> [13] [14]  GND ⚫
-🟢 Btn (22) -> [15] [16] <- LED (23) 🔵
-         3,3V  [17] [18] <- Btn (24) 🔵
-       GPIO10  [19] [20]  GND ⚫
-        GPIO9  [21] [22] <- LED (25) 🟡
-       GPIO11  [23] [24]  GPIO8
-          GND  [25] [26]  GPIO7
-        GPIO0  [27] [28]  GPIO1
-🟡 Btn (05) -> [29] [30]  GND ⚫
-🔊 Spk (06) -> [31] [32]  GPIO12
-       GPIO13  [33] [34]  GND ⚫
-       GPIO19  [35] [36]  GPIO16
-       GPIO26  [37] [38]  GPIO20
-          GND  [39] [40]  GPIO21
-          (USB/Ethernet Seite)
+### Schaltplan (Mermaid)
+
+Der Signalfluss fließt konsequent von der Logikeinheit (links) zu den Aktoren/Sensoren und endet an der Masse (rechts).
+
+```mermaid
+flowchart LR
+    %% Globale Styling-Klassen für ein ansprechendes Design
+    classDef pi fill:#2D3139,stroke:#8B9BB4,stroke-width:2px,color:#fff;
+    classDef ledR fill:#FF4B4B,stroke:#990000,stroke-width:2px,color:#fff;
+    classDef ledG fill:#4CAF50,stroke:#006600,stroke-width:2px,color:#fff;
+    classDef ledB fill:#2196F3,stroke:#000099,stroke-width:2px,color:#fff;
+    classDef ledY fill:#FFC107,stroke:#996600,stroke-width:2px,color:#333;
+    classDef btn fill:#E0E0E0,stroke:#666,stroke-width:2px,color:#333;
+    classDef snes fill:#B0BEC5,stroke:#455A64,stroke-width:2px,color:#000;
+    classDef gnd fill:#1A1A1A,stroke:#666,stroke-width:2px,color:#fff;
+    classDef pwr fill:#D32F2F,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef res fill:#8D6E63,stroke:#3E2723,stroke-width:2px,color:#fff;
+
+    %% Raspberry Pi (Zentrale links)
+    subgraph RP["Raspberry Pi 4 (GPIOs)"]
+        direction TB
+        VCC[3.3V Power]:::pwr
+        P17[GPIO 17]:::pi
+        P18[GPIO 18]:::pi
+        P27[GPIO 27]:::pi
+        P22[GPIO 22]:::pi
+        P23[GPIO 23]:::pi
+        P24[GPIO 24]:::pi
+        P25[GPIO 25]:::pi
+        P5[GPIO 5]:::pi
+        P6[GPIO 6 - Buzzer]:::pi
+        P12[GPIO 12]:::pi
+        P13[GPIO 13]:::pi
+        P16[GPIO 16]:::pi
+        PCLK[GPIO Clock]:::pi
+        PLAT[GPIO Latch]:::pi
+        PDAT[GPIO Data]:::pi
+    end
+
+    %% Gemeinsame Masse-Punkte
+    GND_R[GND]:::gnd
+    GND_G[GND]:::gnd
+    GND_B[GND]:::gnd
+    GND_Y[GND]:::gnd
+    GND_BUZ[GND]:::gnd
+    GND_DIFF[GND]:::gnd
+    GND_SNES[GND]:::gnd
+
+    %% Verkabelung
+    P17 -- Signal --> R1[220Ω]:::res --> LEDR((LED Rot)):::ledR --> GND_R
+    P18 -. Pull-Up .-> BTNR([Taster Rot]):::btn --> GND_R
+
+    P27 -- Signal --> R2[220Ω]:::res --> LEDG((LED Grün)):::ledG --> GND_G
+    P22 -. Pull-Up .-> BTNG([Taster Grün]):::btn --> GND_G
+
+    P23 -- Signal --> R3[220Ω]:::res --> LEDB((LED Blau)):::ledB --> GND_B
+    P24 -. Pull-Up .-> BTNB([Taster Blau]):::btn --> GND_B
+
+    P25 -- Signal --> R4[220Ω]:::res --> LEDY((LED Gelb)):::ledY --> GND_Y
+    P5 -. Pull-Up .-> BTNY([Taster Gelb]):::btn --> GND_Y
+    
+    P6 -- Signal --> BUZ(((Aktiver Buzzer))):::btn --> GND_BUZ
+
+    P12 -. Pull-Up .-> BTNH([Taster Hard]):::btn --> GND_DIFF
+    P13 -. Pull-Up .-> BTNM([Taster Medium]):::btn --> GND_DIFF
+    P16 -. Pull-Up .-> BTNE([Taster Easy]):::btn --> GND_DIFF
+
+    subgraph SN["SNES Controller"]
+        direction TB
+        S_VCC[VCC]:::snes
+        S_CLK[Clock]:::snes
+        S_LAT[Latch]:::snes
+        S_DAT[Data]:::snes
+        S_GND[GND]:::snes
+    end
+
+    VCC -- 3.3V --> S_VCC
+    PCLK -- Takt --> S_CLK
+    PLAT -- Latch --> S_LAT
+    S_DAT -- Daten --> PDAT
+    S_GND --> GND_SNES
 ```
 
 
@@ -108,24 +169,22 @@ docker compose logs -f
 
 <<<<<<< HEAD
 ****Projekt von****: ***Sebastian Scholtysek, Robin Zindler, Lars Krümmel***
-## 7. Erweiterung: Web-Interface & Schwierigkeitsgrade
+## 7. Die Web-Oberfläche (Netzwerk-Komponente des CPS)
 
-Das Projekt wurde um eine Flask-Webanwendung erweitert, die eine Fernsteuerung, Statusanzeige und Highscore-Liste bietet.
+Um das Projekt zu einem vollwertigen Cyber-Physical System zu erweitern, wurde das lokale Hardware-Setup um eine vernetzte Komponente ergänzt. Eine in Python (Flask) geschriebene Web-Applikation (`app/`) dient als digitale Schnittstelle und verknüpft die physischen Sensoren und Aktoren des Raspberry Pi mit einem netzwerkbasierten Dashboard.
 
-### Funktionen der Web-App (Flask)
+### Funktionen der Web-App
 
-Die Flask-Applikation (`app/`) bietet folgende Vorteile:
-
-1.  **Dashboard & Highscores**:
-    - Zeigt die Top-10-Bestenliste an.
-    - Nach einem "Game Over" kann der Spieler seinen Namen eingeben, der zusammen mit dem erreichten Score gespeichert wird.
+1. **Dashboard & Datenpersistenz (Highscores)**:
+    Die gesammelten Spieldaten werden in einer lokalen SQLite-Datenbank (`simon.db`) persistent gespeichert. Sobald ein "Game Over" auf der Hardware registriert wird, kann der Nutzer seinen Namen im Web-Interface eintragen. Das Dashboard ruft diese Daten ab und präsentiert eine interaktive Top-10-Bestenliste. Dies demonstriert die Integration von physischen Ereignissen mit klassischer Software-Datenhaltung.
     
     ![Dashboard](screenshots/dashboard.png)
 
-2.  **Remote Control & Live-Ansicht**:
-    - **Fernsteuerung**: Die farbigen Buttons im Browser funktionieren wie die physischen Taster.
-    - **Echtzeit-Synchronisation**: Die LEDs im Browser leuchten synchron zur Hardware. Das Spiel kann komplett über den Browser gespielt werden.
-    - **Schwierigkeitswahl**: Über Buttons (Easy, Medium, Hard) kann der Schwierigkeitsgrad direkt geändert werden.
+2. **Remote Control & Bidirektionale Echtzeit-Synchronisation**:
+    Das Herzstück der Netzwerkintegration ist die Remote-Control-Ansicht, die über WebSockets eine latenzarme, bidirektionale Kommunikation ermöglicht:
+    - **Beobachten (Digitaler Zwilling)**: Die Zustände der physischen Hardware werden in Echtzeit in den Browser gespiegelt. Leuchtet eine LED am Steckbrett auf, wird dies simultan auf der Weboberfläche visualisiert.
+    - **Steuern (Fernzugriff)**: Das System kann vollständig über den Browser bedient werden. Ein Klick auf die virtuellen farbigen Taster löst exakt denselben Logik-Trigger aus wie ein physischer Knopfdruck am Breadboard.
+    - **Schwierigkeitswahl**: Über Buttons (Easy, Medium, Hard) lässt sich die Spielgeschwindigkeit dynamisch zur Laufzeit anpassen, was direkte Auswirkungen auf die Blink- und Pausendauern der physischen LEDs hat.
 
     ![Remote Control](screenshots/remote.png)
 
