@@ -280,6 +280,20 @@
         text-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
     }
 
+    /* GLITCH EFFECT FOR GAME OVER */
+    .glitch-flash {
+        animation: glitch 0.2s 3;
+    }
+
+    @keyframes glitch {
+        0% { transform: translate(0); color: #fff; }
+        20% { transform: translate(-5px, 5px); color: #ff00ff; }
+        40% { transform: translate(-5px, -5px); color: #00d2ff; }
+        60% { transform: translate(5px, 5px); color: #ff00ff; }
+        80% { transform: translate(5px, -5px); color: #00d2ff; }
+        100% { transform: translate(0); color: #fff; }
+    }
+
     /*
      * CONTROLS (Difficulty)
      */
@@ -580,12 +594,17 @@
         socket.on('game_over', (data) => {
             startBtn.disabled = false;
             startBtn.textContent = 'START';
-            lcdStatus.textContent = 'GAME OVER';
+            
+            // Trigger Glitch
+            lcdStatus.classList.add('glitch-flash');
+            lcdStatus.textContent = 'CRITICAL ERROR';
             lcdStatus.style.color = '#ff0000';
+            
             setTimeout(() => {
+                lcdStatus.classList.remove('glitch-flash');
                 lcdStatus.style.color = '#00d2ff';
                 lcdStatus.textContent = 'System Ready';
-            }, 5000);
+            }, 3000);
         });
 
         socket.on('game_status', (data) => {
