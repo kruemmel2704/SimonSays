@@ -253,19 +253,36 @@ class SimonSaysGame:
 
     def wait_for_any_button(self):
         """
-        Der Kern der Hybrid-Steuerung:
         Wartet auf Hardware-Button, Web-Input ODER SNES-Controller.
+        Gibt die Farbe zurück, sobald die Taste GEDRÜCKT wurde.
         """
         while True:
             # A) Check Hardware Buttons
             for color, btn in self.buttons.items():
                 if btn.is_pressed:
-                    while btn.is_pressed: time.sleep(0.01)
+                    # Sofort Licht an zur Bestätigung
+                    self._set_led_state(color, True)
+                    if hasattr(self, 'buzzer'):
+                        try: self.buzzer.on()
+                        except: pass
+                    
+                    # Warten bis losgelassen
+                    while btn.is_pressed:
+                        time.sleep(0.01)
+                    
+                    # Licht aus
+                    self._set_led_state(color, False)
+                    if hasattr(self, 'buzzer'):
+                        try: self.buzzer.off()
+                        except: pass
+                        
                     return color
 
             # B) Check Web Input
             color = self._pop_remote_input()
             if color in self.colors:
+                # Bei Web-Input simulieren wir das Drücken kurz
+                self.flash_led(color)
                 return color
             
             # C) Check SNES Controller
@@ -274,9 +291,10 @@ class SimonSaysGame:
                 if snes_btn in SNES_MAPPING:
                     target = SNES_MAPPING[snes_btn]
                     if target in self.colors:
-                        # Warten bis losgelassen
+                        self._set_led_state(target, True)
                         while snes_btn in self.read_pressed_snes_buttons():
                             time.sleep(0.01)
+                        self._set_led_state(target, False)
                         return target
             
             time.sleep(0.01)
@@ -285,52 +303,71 @@ class SimonSaysGame:
         """Prüft die Eingabe des Spielers"""
         self._emit('game_status', {'msg': 'Du bist dran!'})
         
+        # Sicherstellen, dass keine "alten" Clicks von der Simon-Phase mehr im Speicher sind
+        self._clear_remote_inputs()
+        
         for expected_color in self.sequence:
-            # Warten auf Eingabe (Egal ob Web oder Button)
+            # Warten auf Eingabe (Licht-Feedback passiert jetzt direkt in wait_for_any_button)
             pressed_color = self.wait_for_any_button()
             
-            if pressed_color == expected_color:
-                # Richtig: Feedback geben (LED leuchtet kurz)
-                self.flash_led(pressed_color)
-            else:
+            if pressed_color != expected_color:
                 # Falsch: Game Over
                 return False
+                
         return True
 
     def game_over_signal(self):
         """Spielende Animation"""
-        score = len(self.sequence)
-        print(f"Game Over. Score: {score}")
+        # Korrekter Score: Die Anzahl der erfolgreich wiederholten Runden
+        score = max(0, len(self.sequence) - 1)
+        print(f"Game Over. Erreichter Score: {score}")
         self._emit('game_over', {'score': score})
         
         # 3x Blinken und Piepen
         for _ in range(3):
-            self.buzzer.on()
+            if hasattr(self, 'buzzer'):
+                try: self.buzzer.on()
+                except: pass
             for color in self.colors:
                 self._set_led_state(color, True)
             time.sleep(0.3)
-            self.buzzer.off()
+            if hasattr(self, 'buzzer'):
+                try: self.buzzer.off()
+                except: pass
             for color in self.colors:
                 self._set_led_state(color, False)
             time.sleep(0.3)
 
-        # Warten auf Namenseingabe im Dashboard
+        # Warten auf Namenseingabe ODER Hardware-Restart
         self.wait_for_name_input(score)
 
     def wait_for_name_input(self, score):
         """
-        Blockiert den Game-Loop, bis ein Name über das Dashboard eingegeben wurde.
+        Wartet auf Namen vom Web-Dashboard. 
+        Kann durch Drücken einer Hardware-Taste abgebrochen werden (Sofort-Restart).
         """
         self._emit('request_name', {'score': score})
-        print(f"Warte auf Namenseingabe für Score {score}...")
-        
         self.name_received_flag = False
-        self.current_score = score # Speichern für on_name_submitted
+        self.current_score = score
         
-        while not self.name_received_flag:
-            time.sleep(0.1)
+        timeout_loops = 300 # 30 Sekunden maximal warten
+        while not self.name_received_flag and timeout_loops > 0:
+            # Prüfen ob jemand an der Hardware eine Taste drückt zum Weiterspielen
+            for btn in self.buttons.values():
+                if btn.is_pressed:
+                    print("Hardware-Restart erkannt.")
+                    self.name_received_flag = True
+                    return # Sofort zurück zum Start-Wave
             
-        print("Name empfangen, Spiel wird zurückgesetzt.")
+            # SNES Start?
+            if self.read_pressed_snes_buttons():
+                self.name_received_flag = True
+                return
+
+            time.sleep(0.1)
+            timeout_loops -= 1
+            
+        print("Name-Phase beendet.")
 
     def on_name_submitted(self, name):
         """
