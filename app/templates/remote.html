@@ -59,7 +59,7 @@
         background: #000;
         box-shadow: inset 0 0 40px #000;
         border: 4px solid #111;
-        /* Forced Diamond Rotation */
+        /* Rotate 45deg to align colors correctly (90deg shift from -45) */
         transform: rotate(45deg) !important;
     }
 
@@ -71,40 +71,39 @@
         transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
-        border: 1px solid rgba(0,0,0,0.2);
+        border: 1px solid rgba(0,0,0,0.1);
         box-sizing: border-box;
     }
 
     /* 
-     * EXACT SNES LAYOUT MAPPING (MATCHING PHOTO)
-     * After 45deg rotation:
-     * top:0, right:0  => TOP
-     * bottom:0, right:0 => RIGHT
-     * bottom:0, left:0  => BOTTOM
-     * top:0, left:0    => LEFT
+     * SNES LAYOUT MAPPING (-45deg rotation)
+     * Top-Left (0,0)      => TOP (BLUE)
+     * Top-Right (1,0)     => RIGHT (RED)
+     * Bottom-Right (1,1)  => BOTTOM (YELLOW)
+     * Bottom-Left (0,1)   => LEFT (GREEN)
      */
     #btn-blue {
-        top: 0; right: 0;
+        top: 0; left: 0;
         background-color: #0044b3;
-        border-top-right-radius: 100%;
+        border-top-left-radius: 100%;
     }
 
     #btn-red {
-        bottom: 0; right: 0;
+        top: 0; right: 0;
         background-color: #b30000;
-        border-bottom-right-radius: 100%;
+        border-top-right-radius: 100%;
     }
 
     #btn-yellow {
-        bottom: 0; left: 0;
+        bottom: 0; right: 0;
         background-color: #b3a400;
-        border-bottom-left-radius: 100%;
+        border-bottom-right-radius: 100%;
     }
 
     #btn-green {
-        top: 0; left: 0;
+        bottom: 0; left: 0;
         background-color: #008037;
-        border-top-left-radius: 100%;
+        border-bottom-left-radius: 100%;
     }
 
     /*
