@@ -247,9 +247,14 @@ class SimonSaysGame:
     def play_sequence(self):
         """Spielt die aktuelle Folge ab"""
         self._emit('game_status', {'msg': 'Simon zeigt...'})
-        time.sleep(1)
+        time.sleep(0.8) # Kurze Pause vor dem Start
+        
+        print(f"Simon spielt Sequenz: {self.sequence}")
         for color in self.sequence:
             self.flash_led(color)
+            time.sleep(self.sequence_pause) # WICHTIG: Pause zwischen den Farben
+        
+        print("Simon fertig. Spieler ist dran.")
 
     def wait_for_any_button(self):
         """
@@ -260,6 +265,7 @@ class SimonSaysGame:
             # A) Check Hardware Buttons
             for color, btn in self.buttons.items():
                 if btn.is_pressed:
+                    print(f"Hardware-Button GEDRÜCKT: {color}")
                     # Sofort Licht an zur Bestätigung
                     self._set_led_state(color, True)
                     if hasattr(self, 'buzzer'):
@@ -270,6 +276,7 @@ class SimonSaysGame:
                     while btn.is_pressed:
                         time.sleep(0.01)
                     
+                    print(f"Hardware-Button LOSGELASSEN: {color}")
                     # Licht aus
                     self._set_led_state(color, False)
                     if hasattr(self, 'buzzer'):
@@ -281,6 +288,7 @@ class SimonSaysGame:
             # B) Check Web Input
             color = self._pop_remote_input()
             if color in self.colors:
+                print(f"Web-Input ERKANNT: {color}")
                 # Bei Web-Input simulieren wir das Drücken kurz
                 self.flash_led(color)
                 return color
@@ -422,15 +430,18 @@ class SimonSaysGame:
                 end_time = time.time() + 0.1
                 while time.time() < end_time:
                     # 1. Hardware Start?
-                    for btn in self.buttons.values():
+                    for color, btn in self.buttons.items():
                         if btn.is_pressed:
+                            print(f"DEBUG: Start-Signal erkannt durch Hardware-Button: {color}")
                             for wave_color in self.colors:
                                 self._set_led_state(wave_color, False)
                             time.sleep(0.5)
                             return
                     
                     # 2. Web Start?
-                    if self._pop_remote_input():
+                    web_signal = self._pop_remote_input()
+                    if web_signal:
+                        print(f"DEBUG: Start-Signal erkannt durch WEB: {web_signal}")
                         for wave_color in self.colors:
                             self._set_led_state(wave_color, False)
                         time.sleep(0.5)
@@ -439,7 +450,7 @@ class SimonSaysGame:
                     # 3. SNES Start?
                     snes_pressed = self.read_pressed_snes_buttons()
                     if snes_pressed:
-                        # Jede Taste am SNES startet das Spiel
+                        print(f"DEBUG: Start-Signal erkannt durch SNES: {snes_pressed}")
                         for wave_color in self.colors:
                             self._set_led_state(wave_color, False)
                         time.sleep(0.5)
