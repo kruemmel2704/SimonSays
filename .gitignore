@@ -16,3 +16,5 @@ app/simon.db
 app/__pycache__/models.cpython-314.pyc
 /app/db.py
 venv/
+mermaid.md
+.gitignore
