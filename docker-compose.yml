@@ -5,6 +5,9 @@ services:
     build: .
     container_name: simon_game_web
     privileged: true
+    user: "root"
+    group_add:
+      - gpio
     ports:
       - "5000:5000"
     depends_on:
