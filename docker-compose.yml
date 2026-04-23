@@ -16,8 +16,13 @@ services:
       - MYSQL_USER=simon
       - MYSQL_PASSWORD=simon123
       - MYSQL_DB=simon_says
-#    devices:
-#      - /dev/gpiomem:/dev/gpiomem
+    devices:
+      - /dev/gpiomem:/dev/gpiomem
+      - /dev/gpiochip0:/dev/gpiochip0
+      - /dev/gpiochip1:/dev/gpiochip1
+      - /dev/gpiochip2:/dev/gpiochip2
+      - /dev/gpiochip3:/dev/gpiochip3
+      - /dev/gpiochip4:/dev/gpiochip4
     restart: unless-stopped
 
   db:

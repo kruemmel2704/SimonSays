@@ -16,10 +16,10 @@ def get_db():
             if mysql is None:
                 raise ImportError("mysql-connector-python ist nicht installiert")
             g.db = mysql.connector.connect(
-                host=current_app.config['MYSQL_HOST'],
-                user=current_app.config['MYSQL_USER'],
-                password=current_app.config['MYSQL_PASSWORD'],
-                database=current_app.config['MYSQL_DB'],
+                host=current_app.config.get('MYSQL_HOST', 'localhost'),
+                user=current_app.config.get('MYSQL_USER', 'simon'),
+                password=current_app.config.get('MYSQL_PASSWORD', 'simon123'),
+                database=current_app.config.get('MYSQL_DB', 'simon_says'),
                 connect_timeout=2,
             )
             print("MySQL Verbindung erfolgreich.")
