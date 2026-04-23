@@ -72,18 +72,21 @@
      */
     .game-board {
         position: relative;
-        width: min(75vmin, 500px);
-        height: min(75vmin, 500px);
+        width: min(75vmin, 460px);
+        height: min(75vmin, 460px);
         border-radius: 50%;
-        /* Metallic dark finish */
-        background: linear-gradient(145deg, #2b2b2b, #151515);
-        padding: 4%; /* Bezel thickness ratio */
-        /* Heavy 3D neumorphic bezel */
+        background: radial-gradient(circle, #2a2a2a 0%, #111 100%);
+        padding: 15px;
         box-shadow: 
-            20px 20px 50px #040404, 
-            -20px -20px 50px #222222,
-            inset 0 0 15px rgba(0, 0, 0, 0.9);
-        box-sizing: border-box;
+            0 30px 60px rgba(0,0,0,0.8),
+            0 0 30px rgba(255, 0, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.05);
+        animation: board-float 6s ease-in-out infinite;
+    }
+
+    @keyframes board-float {
+        0%, 100% { transform: translateY(0) rotateX(5deg); }
+        50% { transform: translateY(-15px) rotateX(10deg); }
     }
 
     .game-board-inner {
@@ -92,29 +95,31 @@
         height: 100%;
         border-radius: 50%;
         overflow: hidden;
-        background-color: #0d0d0d;
-        box-shadow: inset 0px 4px 20px rgba(0, 0, 0, 1);
+        background: #000;
+        box-shadow: inset 0 0 40px #000;
+        border: 4px solid #111;
     }
 
-    /*
-     * THE BUTTONS
-     */
     .simon-btn {
         position: absolute;
         width: 50%;
         height: 50%;
-        opacity: 0.5;
-        transition: all 0.15s cubic-bezier(0.4, 0.0, 0.2, 1);
+        opacity: 0.4;
+        transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
-        border: 5px solid #111;
+        border: 4px solid rgba(0,0,0,0.4);
         box-sizing: border-box;
-        /* Default subtle internal reflection */
-        box-shadow: inset 0 0 25px rgba(0,0,0,0.9);
+        /* Glossy Glass Look */
+        background-image: 
+            radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
+            radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 80%);
     }
 
     .simon-btn:hover {
-        opacity: 0.7;
+        opacity: 0.6;
+        transform: scale(0.98);
+        filter: brightness(1.2);
     }
 
     /* Positioning the 4 quadrants */
@@ -243,6 +248,38 @@
         to { opacity: 0.5; }
     }
 
+    /* NEON LCD DISPLAY */
+    .game-display {
+        width: min(80vw, 300px);
+        background: #050505;
+        border: 2px solid #333;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 25px;
+        text-align: center;
+        box-shadow: 
+            0 0 15px rgba(0,0,0,0.5),
+            inset 0 0 10px #000;
+        border-bottom: 3px solid #ff00ff;
+    }
+
+    #lcd-status {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.9rem;
+        color: #00d2ff;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 0 0 8px rgba(0, 210, 255, 0.6);
+        margin-bottom: 5px;
+    }
+
+    #lcd-score {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 1.4rem;
+        color: #ff00ff;
+        text-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
+    }
+
     /*
      * CONTROLS (Difficulty)
      */
@@ -340,7 +377,13 @@
 
 {% block content %}
 <div class="simon-wrapper" style="margin-top: -2rem">
-    <!-- Back button removed (Navbar is used) -->
+    
+    <!-- Neon LCD Display -->
+    <div class="game-display">
+        <div id="lcd-status">System Ready</div>
+        <div id="lcd-score">LEVEL: 0</div>
+    </div>
+
     <div class="game-board">
         <div class="game-board-inner">
             <div id="btn-green" class="simon-btn" data-color="green"></div>
@@ -521,24 +564,48 @@
             });
         });
 
-        // Start Game Logic
         const startBtn = document.getElementById('start-btn');
+        const lcdStatus = document.getElementById('lcd-status');
+        const lcdScore = document.getElementById('lcd-score');
+        let currentLevel = 0;
+
         startBtn.addEventListener('click', () => {
             socket.emit('start_game');
             startBtn.disabled = true;
             startBtn.textContent = 'RUNNING';
+            currentLevel = 1;
+            lcdScore.textContent = `LEVEL: ${currentLevel}`;
         });
 
-        socket.on('game_over', () => {
+        socket.on('game_over', (data) => {
             startBtn.disabled = false;
             startBtn.textContent = 'START';
+            lcdStatus.textContent = 'GAME OVER';
+            lcdStatus.style.color = '#ff0000';
+            setTimeout(() => {
+                lcdStatus.style.color = '#00d2ff';
+                lcdStatus.textContent = 'System Ready';
+            }, 5000);
         });
 
         socket.on('game_status', (data) => {
+            lcdStatus.textContent = data.msg;
             if (data.msg === 'Spiel startet!') {
                 startBtn.disabled = true;
                 startBtn.textContent = 'RUNNING';
+                currentLevel = 1;
+                lcdScore.textContent = `LEVEL: ${currentLevel}`;
             }
+            if (data.msg === 'Du bist dran!') {
+                lcdStatus.style.color = '#00ff00';
+            } else {
+                lcdStatus.style.color = '#00d2ff';
+            }
+        });
+
+        socket.on('led_state', (data) => {
+            // When Simon flashes an LED, we can assume level progress 
+            // but the backend sends game_status for major phases.
         });
 
         // Watchdog
