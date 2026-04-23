@@ -22,8 +22,10 @@ def create_app():
     # Blueprints registrieren
     from app.routes.main import main_bp
     from app.routes.remote import remote_bp
+    from app.routes.admin import admin_bp
     app.register_blueprint(main_bp)
     app.register_blueprint(remote_bp)
+    app.register_blueprint(admin_bp)
 
     # Datenbankmodelle laden und Tabellen erstellen
     with app.app_context():

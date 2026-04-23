@@ -438,3 +438,22 @@ class SimonSaysGame:
                     self.game_running = False
                 else:
                     time.sleep(0.5)
+    def get_debug_status(self):
+        """Liefert den aktuellen Status aller Hardware-Komponenten für Debug-Zwecke."""
+        status = {
+            'leds': {color: self.led_states[color] for color in self.colors},
+            'buttons': {color: ('pressed' if self.buttons[color].is_pressed else 'released') for color in self.colors},
+            'snes': self.read_pressed_snes_buttons(),
+            'difficulty': self.current_difficulty,
+            'is_raspi': IS_RASPI
+        }
+        return status
+
+    def toggle_led_debug(self, color):
+        """Schaltet eine LED für Debug-Zwecke um (unabhängig vom Spiel-Loop)."""
+        if color in self.leds:
+            current = self.led_states[color] == 'on'
+            new_state = not current
+            self._set_led_state(color, new_state)
+            return new_state
+        return False

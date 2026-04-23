@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPIO Debug - Simon Says</title>
+    <style>
+        body { font-family: sans-serif; background-color: #121212; color: #e0e0e0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: #1e1e1e; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333; }
+        h1, h2 { color: #bb86fc; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        .status-box { padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; }
+        .btn { padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-toggle { width: 100%; margin-top: 5px; background: #03dac6; color: black; }
+        
+        .RED { background-color: #880e0e; }
+        .RED.active { background-color: #ff0000; box-shadow: 0 0 15px #ff0000; }
+        .GREEN { background-color: #1b5e20; }
+        .GREEN.active { background-color: #00ff00; box-shadow: 0 0 15px #00ff00; }
+        .BLUE { background-color: #0d47a1; }
+        .BLUE.active { background-color: #0000ff; box-shadow: 0 0 15px #0000ff; }
+        .YELLOW { background-color: #f57f17; }
+        .YELLOW.active { background-color: #ffff00; box-shadow: 0 0 15px #ffff00; }
+        
+        .pressed { background-color: #f39c12; color: black; }
+        .released { background-color: #2c3e50; }
+        
+        .raspi-status { font-weight: bold; }
+        .raspi-true { color: #4caf50; }
+        .raspi-false { color: #f44336; }
+        
+        .nav { margin-bottom: 20px; }
+        .nav a { color: #bb86fc; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav"><a href="/admin/logout">Logout</a> | <a href="/">Zum Game Dashboard</a></div>
+        <h1>Hardware Debugging & Status</h1>
+        
+        <div class="card">
+            <h2>System-Status</h2>
+            <p>Raspberry Pi Hardware erkannt: 
+                <span class="raspi-status raspi-{{ status.is_raspi|lower }}">
+                    {{ 'JA' if status.is_raspi else 'NEIN (Emulator-Modus)' }}
+                </span>
+            </p>
+        </div>
+
+        <div class="card">
+            <h2>LED Test (Klick zum Umschalten)</h2>
+            <div class="grid">
+                {% for color, state in status.leds.items() %}
+                <div class="status-box {{ color|upper }} {{ 'active' if state == 'on' }}" id="led-{{ color }}">
+                    {{ color|upper }} LED
+                    <button class="btn btn-toggle" onclick="toggleLed('{{ color }}')">Umschalten</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Physische Taster (Echtzeit)</h2>
+            <p><small>(Aktualisiert sich alle 500ms automatisch)</small></p>
+            <div class="grid" id="button-status">
+                {% for color, state in status.buttons.items() %}
+                <div class="status-box {{ state }}" id="btn-{{ color }}">
+                    {{ color|upper }} Btn
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>SNES Controller</h2>
+            <div id="snes-status">
+                {% if status.snes %}
+                    Gedrückte Tasten: <strong>{{ status.snes|join(', ') }}</strong>
+                {% else %}
+                    Keine Tasten am SNES gedrückt.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleLed(color) {
+            fetch(`/admin/toggle/${color}`)
+                .then(res => res.json())
+                .then(data => {
+                    const el = document.getElementById(`led-${color}`);
+                    if (data.state === 'on') el.classList.add('active');
+                    else el.classList.remove('active');
+                });
+        }
+
+        function updateStatus() {
+            fetch('/admin/status')
+                .then(res => res.json())
+                .then(data => {
+                    // Update Buttons
+                    for (const [color, state] of Object.entries(data.buttons)) {
+                        const el = document.getElementById(`btn-${color}`);
+                        if (state === 'pressed') {
+                            el.classList.add('pressed');
+                            el.classList.remove('released');
+                        } else {
+                            el.classList.remove('pressed');
+                            el.classList.add('released');
+                        }
+                    }
+
+                    // Update SNES
+                    const snesEl = document.getElementById('snes-status');
+                    if (data.snes && data.snes.length > 0) {
+                        snesEl.innerHTML = `Gedrückte Tasten: <strong>${data.snes.join(', ')}</strong>`;
+                    } else {
+                        snesEl.innerText = 'Keine Tasten am SNES gedrückt.';
+                    }
+
+                    // Update LEDs (falls von woanders geschaltet)
+                    for (const [color, state] of Object.entries(data.leds)) {
+                        const el = document.getElementById(`led-${color}`);
+                        if (state === 'on') el.classList.add('active');
+                        else el.classList.remove('active');
+                    }
+                });
+        }
+
+        setInterval(updateStatus, 500);
+    </script>
+</body>
+</html>
