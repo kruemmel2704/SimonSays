@@ -106,9 +106,3 @@ import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///' + os.path.join(basedir, 'simon.db')
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-
-# MySQL Konfiguration (wird von app/db.py genutzt)
-MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
-MYSQL_USER = os.environ.get('MYSQL_USER', 'simon')
-MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', 'simon123')
-MYSQL_DB = os.environ.get('MYSQL_DB', 'simon_says')
