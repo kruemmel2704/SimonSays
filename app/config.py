@@ -6,9 +6,25 @@ import os
 # Apple Silicon Macs also report 'arm64', so we check for 'Linux' as well
 machine = platform.machine().lower()
 system = platform.system().lower()
-IS_RASPI = ("arm" in machine or "aarch64" in machine) and system == "linux"
 
-if os.name == 'nt' or system == 'darwin': 
+IS_RASPI = False
+if system == "linux":
+    # Check for Raspberry Pi specifically, not just ARM architecture
+    if os.path.exists('/proc/device-tree/model'):
+        try:
+            with open('/proc/device-tree/model', 'r') as f:
+                model = f.read().lower()
+                if "raspberry pi" in model:
+                    IS_RASPI = True
+        except:
+            pass
+
+# Fallback check for architecture if /proc is not accessible
+if not IS_RASPI and ("arm" in machine or "aarch64" in machine) and system == "linux":
+    # If it's ARM Linux but NOT confirmed Pi, we default to False unless overridden
+    IS_RASPI = os.environ.get('FORCE_RASPI', '0') == '1'
+
+if system == 'darwin' or os.name == 'nt': 
     IS_RASPI = False
 
 if not IS_RASPI:

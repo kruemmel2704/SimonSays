@@ -32,15 +32,21 @@ if __name__ == "__main__":
     server_thread.start()
 
     if not IS_RASPI:
-        try:
-            print("Starte GUI-Emulator...")
-            from mock_gpio_gui import _get_emulator
-            _get_emulator().run()
-        except ImportError:
-            print("WARNUNG: mock_gpio_gui konnte nicht geladen werden. Server läuft Headless.")
+        # Check if we are likely in a headless environment (like Docker)
+        is_headless = os.environ.get('HEADLESS', '0') == '1'
+        
+        if not is_headless:
+            try:
+                print("Starte GUI-Emulator...")
+                from mock_gpio_gui import _get_emulator
+                _get_emulator().run()
+            except (ImportError, Exception) as e:
+                print(f"HINWEIS: GUI-Emulator konnte nicht gestartet werden ({e}).")
+                print("Server läuft im Headless-Modus weiter.")
+                server_thread.join()
+        else:
+            print("Headless-Modus aktiv. Server läuft ohne GUI.")
             server_thread.join()
-        except KeyboardInterrupt:
-            print("Beende...")
     else:
         # Auf dem Pi läuft nur der Server
         try:
