@@ -61,7 +61,6 @@
         border: 4px solid #111;
         /* Forced Diamond Rotation */
         transform: rotate(45deg) !important;
-        -webkit-transform: rotate(45deg) !important;
     }
 
     .simon-btn {
@@ -72,30 +71,37 @@
         transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
-        border: 2px solid rgba(0,0,0,0.4);
+        border: 1px solid rgba(0,0,0,0.2);
         box-sizing: border-box;
-        background-image: 
-            radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 60%),
-            radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 80%);
     }
 
-    /* Diamond Layout Mapping */
-    #btn-blue { /* TOP */
+    /* 
+     * EXACT SNES LAYOUT MAPPING (MATCHING PHOTO)
+     * After 45deg rotation:
+     * top:0, right:0  => TOP
+     * bottom:0, right:0 => RIGHT
+     * bottom:0, left:0  => BOTTOM
+     * top:0, left:0    => LEFT
+     */
+    #btn-blue {
         top: 0; right: 0;
         background-color: #0044b3;
         border-top-right-radius: 100%;
     }
-    #btn-red { /* RIGHT */
+
+    #btn-red {
         bottom: 0; right: 0;
         background-color: #b30000;
         border-bottom-right-radius: 100%;
     }
-    #btn-yellow { /* BOTTOM */
+
+    #btn-yellow {
         bottom: 0; left: 0;
         background-color: #b3a400;
         border-bottom-left-radius: 100%;
     }
-    #btn-green { /* LEFT */
+
+    #btn-green {
         top: 0; left: 0;
         background-color: #008037;
         border-top-left-radius: 100%;
