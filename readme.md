@@ -141,3 +141,4 @@ Das Spiel bietet drei Schwierigkeitsgrade, die Geschwindigkeit und Pausen beeinf
 
 Die Schwierigkeit kann über die **Web-Oberfläche (Remote)** oder über dedizierte **Hardware-Buttons** (GPIO 12, 13, 16) eingestellt werden.
 
+ 
