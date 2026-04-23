@@ -100,13 +100,13 @@ class GPIOEmulator:
             if self.root:
                 self.root.after(0, update)
 
-    def add_button(self, pin, name=None):
+    def add_button(self, pin, name=None, callback=None):
         if self.root:
-            self.root.after(0, lambda: self._create_button_widget(pin, name))
+            self.root.after(0, lambda: self._create_button_widget(pin, name, callback))
         else:
-            self.pending_actions.append(lambda: self._create_button_widget(pin, name))
+            self.pending_actions.append(lambda: self._create_button_widget(pin, name, callback))
 
-    def _create_button_widget(self, pin, name):
+    def _create_button_widget(self, pin, name, callback=None):
         frame = tk.Frame(self.main_frame)
         frame.pack(fill=tk.X, pady=5)
         
@@ -117,11 +117,14 @@ class GPIOEmulator:
         btn = tk.Button(frame, text="PUSH", command=lambda: self._press_button(pin))
         btn.pack(side=tk.RIGHT)
         
-        self.buttons[pin] = {"state": False, "widget": btn}
+        self.buttons[pin] = {"state": False, "widget": btn, "callback": callback}
 
     def _press_button(self, pin):
         if pin in self.buttons:
             self.buttons[pin]["state"] = True
+            callback = self.buttons[pin].get("callback")
+            if callback:
+                callback()
             # Auto release after 200ms
             if self.root:
                 self.root.after(200, lambda: self._release_button(pin))
@@ -194,8 +197,13 @@ class LED:
 class Button:
     def __init__(self, pin):
         self.pin = pin
+        self.when_pressed = None
         name = _get_pin_label(pin, "Button")
-        _get_emulator().add_button(pin, name=name)
+        _get_emulator().add_button(pin, name=name, callback=self._handle_press)
+
+    def _handle_press(self):
+        if self.when_pressed:
+            self.when_pressed()
 
     @property
     def is_pressed(self):
