@@ -36,13 +36,12 @@ def create_app():
     from app.gpio_logic import SimonSaysGame
 
     def game_socket_callback(event, data):
-        # Print für Docker-Logs zur Diagnose
-        # print(f"DEBUG SocketIO: Sende Event '{event}' an Clients...")
         try:
-            # Wir emittieren an den Namespace /remote (Dashboard)
-            socketio.emit(event, data, namespace='/remote')
-            # Fallback für andere Subscriber
-            socketio.emit(event, data)
+            with app.app_context():
+                # Wir emittieren an den Namespace /remote (Dashboard)
+                socketio.emit(event, data, namespace='/remote')
+                # Fallback für andere Subscriber
+                socketio.emit(event, data)
         except Exception as e:
             print(f"ERROR beim Senden von SocketIO Event: {e}")
 

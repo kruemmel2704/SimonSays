@@ -152,7 +152,11 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     // Socket Initialisierung (Lokal)
-    const socket = io('/remote');
+    // Wir fangen mit Polling an, da das am stabilsten ist und WebSockets oft geblockt werden
+    const socket = io('/remote', {
+        transports: ['polling', 'websocket'],
+        upgrade: true
+    });
     
     // Elemente
     const STATUS_DOT = document.getElementById('status-indicator');
@@ -172,15 +176,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Verbindungshändling
     socket.on('connect', () => {
+        console.log("Verbunden mit /remote Namespace via " + socket.io.engine.transport.name);
         STATUS_DOT.classList.add('connected');
         socket.emit('request_snapshot');
+        
+        // Optisches Feedback im LCD
+        if(LCD_STATUS.textContent === "System Ready") {
+            LCD_STATUS.textContent = "CONNECTED ONLINE";
+            setTimeout(() => { if(LCD_STATUS.textContent === "CONNECTED ONLINE") LCD_STATUS.textContent = "System Ready"; }, 2000);
+        }
     });
+
     socket.on('disconnect', () => {
+        console.warn("Verbindung verloren!");
         STATUS_DOT.classList.remove('connected');
     });
 
     // LED Steuerung
     socket.on('led_state', (data) => {
+        console.log("LED Event:", data.color, data.state);
         const btn = BTNS[data.color];
         if (btn) {
             if (data.state === 'on') btn.classList.add('active');
