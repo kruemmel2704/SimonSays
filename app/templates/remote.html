@@ -4,18 +4,7 @@
 
 {% block extra_css %}
 <style>
-    /*
-     * RESET & BASICS
-     */
-    body,
-    html {
-        user-select: none;
-        overflow-x: hidden;
-    }
-
-    /*
-     * MAIN CONTAINER
-     */
+    body, html { user-select: none; overflow-x: hidden; }
     .simon-wrapper {
         position: relative;
         width: 100%;
@@ -28,10 +17,6 @@
         background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
         background-size: 40px 40px;
     }
-
-    /*
-     * THE GAME BOARD
-     */
     .game-board {
         position: relative;
         width: min(75vmin, 460px);
@@ -42,317 +27,84 @@
         box-shadow: 0 30px 60px rgba(0,0,0,0.8), 0 0 30px rgba(255, 0, 255, 0.2);
         border: 2px solid rgba(255, 255, 255, 0.05);
         animation: board-float 6s ease-in-out infinite;
-        perspective: 1000px;
     }
-
     @keyframes board-float {
         0%, 100% { transform: translateY(0) rotateX(5deg); }
         50% { transform: translateY(-15px) rotateX(10deg); }
     }
-
     .game-board-inner {
         position: relative;
-        width: 100%;
-        height: 100%;
+        width: 100%; height: 100%;
         border-radius: 50%;
         overflow: hidden;
         background: #000;
         box-shadow: inset 0 0 40px #000;
         border: 4px solid #111;
-        /* Rotate 45deg to align colors correctly (90deg shift from -45) */
         transform: rotate(45deg) !important;
     }
-
     .simon-btn {
         position: absolute;
-        width: 50%;
-        height: 50%;
+        width: 50%; height: 50%;
         opacity: 0.4;
         transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
-        border: 1px solid rgba(0,0,0,0.1);
+        border: 4px solid rgba(0,0,0,0.4);
         box-sizing: border-box;
     }
-
-    /* 
-     * SNES LAYOUT MAPPING (-45deg rotation)
-     * Top-Left (0,0)      => TOP (BLUE)
-     * Top-Right (1,0)     => RIGHT (RED)
-     * Bottom-Right (1,1)  => BOTTOM (YELLOW)
-     * Bottom-Left (0,1)   => LEFT (GREEN)
-     */
-    #btn-blue {
-        top: 0; left: 0;
-        background-color: #0044b3;
-        border-top-left-radius: 100%;
-    }
-
-    #btn-red {
-        top: 0; right: 0;
-        background-color: #b30000;
-        border-top-right-radius: 100%;
-    }
-
-    #btn-yellow {
-        bottom: 0; right: 0;
-        background-color: #b3a400;
-        border-bottom-right-radius: 100%;
-    }
-
-    #btn-green {
-        bottom: 0; left: 0;
-        background-color: #008037;
-        border-bottom-left-radius: 100%;
-    }
-
-    /*
-     * ACTIVE STATE (LIGHT UP & PRESS)
-     */
-    @keyframes pulse-glow {
-        0% { transform: scale(0.96); filter: brightness(1.3); }
-        100% { transform: scale(0.96); filter: brightness(1.6); }
-    }
+    #btn-blue { top: 0; left: 0; background-color: #0044b3; border-top-left-radius: 100%; }
+    #btn-red { top: 0; right: 0; background-color: #b30000; border-top-right-radius: 100%; }
+    #btn-yellow { bottom: 0; right: 0; background-color: #b3a400; border-bottom-right-radius: 100%; }
+    #btn-green { bottom: 0; left: 0; background-color: #008037; border-bottom-left-radius: 100%; }
 
     .simon-btn.active {
         opacity: 1 !important;
         transform: scale(0.96);
         z-index: 10;
-        border-color: #1a1a1a;
-        animation: pulse-glow 0.3s infinite alternate;
+        filter: brightness(1.5);
     }
+    #btn-green.active { box-shadow: 0 0 50px #00e676; background-color: #00e676; }
+    #btn-red.active { box-shadow: 0 0 50px #ff5252; background-color: #ff5252; }
+    #btn-yellow.active { box-shadow: 0 0 50px #ffff00; background-color: #ffff00; }
+    #btn-blue.active { box-shadow: 0 0 50px #448aff; background-color: #448aff; }
 
-    .simon-btn.active#btn-green {
-        background-color: #00e676;
-        box-shadow: 0 0 50px 10px rgba(0, 230, 118, 0.7), inset 0 0 30px rgba(255,255,255,0.7);
-    }
-
-    .simon-btn.active#btn-red {
-        background-color: #ff5252;
-        box-shadow: 0 0 50px 10px rgba(255, 82, 82, 0.7), inset 0 0 30px rgba(255,255,255,0.7);
-    }
-
-    .simon-btn.active#btn-yellow {
-        background-color: #ffff00;
-        box-shadow: 0 0 50px 10px rgba(255, 255, 0, 0.7), inset 0 0 30px rgba(255,255,255,0.7);
-    }
-
-    .simon-btn.active#btn-blue {
-        background-color: #448aff;
-        box-shadow: 0 0 50px 10px rgba(68, 138, 255, 0.7), inset 0 0 30px rgba(255,255,255,0.7);
-    }
-
-    /* CENTER DECORATION */
     .center-decoration {
         position: absolute;
         top: 50%; left: 50%;
-        /* Rotate back -45deg because parent is 45deg */
         transform: translate(-50%, -50%) rotate(-45deg);
         width: 38%; height: 38%;
         background: #181818;
         border-radius: 50%;
         z-index: 50;
         border: 8px solid #080808;
-        box-shadow: 
-            0 0 25px rgba(0, 0, 0, 0.8),
-            inset 2px 2px 5px rgba(255,255,255,0.05);
-
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
+    .brand-text { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 20px; color: #fff; letter-spacing: 2px; }
+    #status-indicator { width: 12px; height: 12px; border-radius: 50%; background-color: #333; margin-top: 5px; }
+    #status-indicator.connected { background-color: #00ff00; box-shadow: 0 0 10px #00ff00; }
 
-    .brand-text {
-        font-family: 'Segoe UI', sans-serif;
-        font-weight: 900;
-        font-size: min(4.5vmin, 24px);
-        letter-spacing: 3px;
-        text-transform: uppercase;
-        margin-bottom: 5px;
-        /* Metallic text effect */
-        background: linear-gradient(135deg, #ffffff, #888888);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        /* Subtle glow */
-        filter: drop-shadow(0px 0px 5px rgba(255,255,255,0.2));
-    }
-
-    /* STATUS INDICATOR */
-    #status-indicator {
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        background-color: #333;
-        box-shadow: inset 1px 1px 4px rgba(0, 0, 0, 0.8);
-        transition: all 0.3s ease;
-        margin-top: 8px;
-        border: 2px solid #111;
-    }
-
-    #status-indicator.connected {
-        background-color: #00ff00;
-        box-shadow: 0 0 15px #00ff00, inset 0 0 5px #fff;
-    }
-
-    #status-indicator.disconnected {
-        background-color: #ff0000;
-        box-shadow: 0 0 15px #ff0000, inset 0 0 5px #fff;
-        animation: blink 1s infinite alternate;
-    }
-
-    @keyframes blink {
-        from { opacity: 1; }
-        to { opacity: 0.5; }
-    }
-
-    /* NEON LCD DISPLAY */
     .game-display {
         width: min(80vw, 300px);
         background: #050505;
         border: 2px solid #333;
         border-radius: 10px;
-        padding: 10px;
-        margin-bottom: 25px;
-        text-align: center;
-        box-shadow: 
-            0 0 15px rgba(0,0,0,0.5),
-            inset 0 0 10px #000;
-        border-bottom: 3px solid #ff00ff;
+        padding: 10px; margin-bottom: 20px; text-align: center;
     }
+    #lcd-status { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #00d2ff; text-transform: uppercase; }
+    #lcd-score { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; color: #ff00ff; }
 
-    #lcd-status {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 0.9rem;
-        color: #00d2ff;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        text-shadow: 0 0 8px rgba(0, 210, 255, 0.6);
-        margin-bottom: 5px;
-    }
-
-    #lcd-score {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 1.4rem;
-        color: #ff00ff;
-        text-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
-    }
-
-    /* GLITCH EFFECT FOR GAME OVER */
-    .glitch-flash {
-        animation: glitch 0.2s 3;
-    }
-
-    @keyframes glitch {
-        0% { transform: translate(0); color: #fff; }
-        20% { transform: translate(-5px, 5px); color: #ff00ff; }
-        40% { transform: translate(-5px, -5px); color: #00d2ff; }
-        60% { transform: translate(5px, 5px); color: #ff00ff; }
-        80% { transform: translate(5px, -5px); color: #00d2ff; }
-        100% { transform: translate(0); color: #fff; }
-    }
-
-    /*
-     * CONTROLS (Difficulty)
-     */
     .controls-container {
-        margin-top: 40px;
-        display: flex;
-        gap: 15px;
-        /* Glassmorphism panel */
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
-        padding: 15px 25px;
-        border-radius: 40px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        margin-top: 30px; display: flex; gap: 10px;
+        background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 30px;
     }
-
-    .diff-btn {
-        background-color: rgba(0, 0, 0, 0.4);
-        color: #aaa;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 10px 20px;
-        border-radius: 25px;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        text-transform: uppercase;
-        font-weight: 700;
-        letter-spacing: 1px;
-    }
-
-    .diff-btn:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        color: #fff;
-        transform: translateY(-2px);
-    }
-
-    .diff-btn.active-diff {
-        background-color: #00d2ff;
-        color: #000;
-        border-color: #00d2ff;
-        box-shadow: 0 0 20px rgba(0, 210, 255, 0.5);
-        transform: translateY(-2px);
-    }
-
-    /* Start Button CSS */
-    .btn-start {
-        background: linear-gradient(135deg, #ff00ff 0%, #ff007f 100%);
-        color: #fff;
-        border: none;
-        padding: 10px 30px;
-        border-radius: 25px;
-        font-family: 'Orbitron', sans-serif;
-        font-weight: 700;
-        letter-spacing: 2px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 0 15px rgba(255, 0, 255, 0.4);
-        text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
-        animation: pulse-start 2s infinite;
-    }
-
-    .btn-start:hover {
-        transform: scale(1.05) translateY(-2px);
-        box-shadow: 0 0 25px rgba(255, 0, 255, 0.7);
-        filter: brightness(1.2);
-    }
-
-    .btn-start:active {
-        transform: scale(0.95);
-    }
-
-    .btn-start:disabled {
-        background: #333;
-        color: #666;
-        box-shadow: none;
-        cursor: not-allowed;
-        animation: none;
-    }
-
-    @keyframes pulse-start {
-        0% { box-shadow: 0 0 15px rgba(255, 0, 255, 0.4); }
-        50% { box-shadow: 0 0 30px rgba(255, 0, 255, 0.8); }
-        100% { box-shadow: 0 0 15px rgba(255, 0, 255, 0.4); }
-    }
-
-    .divider-v {
-        width: 1px;
-        height: 30px;
-        background: rgba(255, 255, 255, 0.1);
-        align-self: center;
-    }
+    .diff-btn { background: #222; color: #888; border: 1px solid #444; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
+    .diff-btn.active-diff { background: #00d2ff; color: #000; }
+    .btn-start { background: #ff00ff; color: #fff; border: none; padding: 8px 25px; border-radius: 20px; font-weight: bold; cursor: pointer; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="simon-wrapper" style="margin-top: -2rem">
-    
-    <!-- Neon LCD Display -->
+<div class="simon-wrapper">
     <div class="game-display">
         <div id="lcd-status">System Ready</div>
         <div id="lcd-score">LEVEL: 0</div>
@@ -364,49 +116,30 @@
             <div id="btn-red" class="simon-btn" data-color="red"></div>
             <div id="btn-yellow" class="simon-btn" data-color="yellow"></div>
             <div id="btn-blue" class="simon-btn" data-color="blue"></div>
-
             <div class="center-decoration">
                 <div class="brand-text">SIMON</div>
-                <div id="status-indicator" title="Connection Status"></div>
+                <div id="status-indicator"></div>
             </div>
         </div>
     </div>
 
     <div class="controls-container">
-        <!-- Start Button -->
-        <button id="start-btn" class="btn-start">
-            START
-        </button>
-        
-        <div class="divider-v"></div>
-
+        <button id="start-btn" class="btn-start">START</button>
         {% for level in difficulty_settings.keys() %}
-        <button class="diff-btn" data-level="{{ level }}">
-            {{ level }}
-        </button>
+        <button class="diff-btn" data-level="{{ level }}">{{ level }}</button>
         {% endfor %}
     </div>
 
-    <!-- Highscore Entry Modal (Moved here from extra_js) -->
-    <div class="modal fade" id="nameInputModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-        aria-hidden="true" style="z-index: 10000;">
+    <!-- Modal -->
+    <div class="modal fade" id="nameInputModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content bg-dark text-white border-info">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title font-orbitron">Game Over!</h5>
-                </div>
                 <div class="modal-body text-center">
-                    <p class="lead">Score: <span id="final-score" class="fw-bold text-warning">0</span></p>
-                    <p>Save your Highscore:</p>
+                    <h3>Game Over!</h3>
+                    <p>Score: <span id="final-score" class="text-warning">0</span></p>
                     <form id="name-form">
-                        <div class="mb-3">
-                            <input type="text" class="form-control bg-secondary text-white border-0 text-center"
-                                id="player-name" placeholder="YOUR NAME" required autocomplete="off">
-                        </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-info fw-bold">SAVE & RESTART</button>
-                            <a href="/" class="btn btn-outline-light mt-2 btn-sm">View Highscores</a>
-                        </div>
+                        <input type="text" class="form-control mb-3 text-center" id="player-name" placeholder="DEIN NAME" required>
+                        <button type="submit" class="btn btn-info w-100">SPEICHERN</button>
                     </form>
                 </div>
             </div>
@@ -416,196 +149,116 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Socket.IO is already in base.html -->
 <script>
-    // Socket.IO Instanz mit explizitem Namespace und Pfad
-    // Wir nutzen die aktuelle URL des Browsers, um Verbindungsfehler zu vermeiden
-    const socket = io('/remote', {
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionAttempts: 10
-    });
-
-    // Setup Visuals
-    const gameBoard = document.querySelector('.game-board');
-    const lcdStatus = document.getElementById('lcd-status');
-    const lcdScore = document.getElementById('lcd-score');
+document.addEventListener("DOMContentLoaded", () => {
+    // Socket Initialisierung (Lokal)
+    const socket = io('/remote');
+    
+    // Elemente
     const STATUS_DOT = document.getElementById('status-indicator');
-
-    function log(msg, type = 'info') {
-        const timestamp = new Date().toLocaleTimeString();
-        console.log(`[${timestamp}] ${msg}`);
-        if (type === 'error' && lcdStatus) {
-            lcdStatus.textContent = "CONN ERROR";
-            lcdStatus.style.color = "#ff0000";
-        }
-    }
-
-    // State
-    let isNameInputActive = false;
-
-    const SIMON_BTNS = {
+    const LCD_STATUS = document.getElementById('lcd-status');
+    const LCD_SCORE = document.getElementById('lcd-score');
+    const START_BTN = document.getElementById('start-btn');
+    const BTNS = {
         'green': document.getElementById('btn-green'),
         'red': document.getElementById('btn-red'),
         'yellow': document.getElementById('btn-yellow'),
         'blue': document.getElementById('btn-blue')
     };
-    const DIFF_BTNS = document.querySelectorAll('.diff-btn');
-
-    // Modal Elements
-    const modalElement = document.getElementById('nameInputModal');
-    const modal = new bootstrap.Modal(modalElement);
+    
+    const modal = new bootstrap.Modal(document.getElementById('nameInputModal'));
     const nameForm = document.getElementById('name-form');
-    const nameInput = document.getElementById('player-name');
-    const scoreDisplay = document.getElementById('final-score');
+    let isNameActive = false;
 
-    // Difficulty Handling
-    function setDifficulty(level) {
-        if (socket && socket.connected) {
-            socket.emit('change_difficulty', { level: level });
-        }
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        // Socket Events
-        socket.on('connect', () => {
-            log("Connected to /remote");
-            STATUS_DOT.classList.remove('disconnected');
-            STATUS_DOT.classList.add('connected');
-            socket.emit('request_snapshot');
-        });
-
-        socket.on('disconnect', () => {
-            STATUS_DOT.classList.remove('connected');
-            STATUS_DOT.classList.add('disconnected');
-        });
-
-        socket.on('led_state', (data) => {
-            const btn = SIMON_BTNS[data.color];
-            if (btn) {
-                if (data.state === 'on') btn.classList.add('active');
-                else btn.classList.remove('active');
-            }
-        });
-
-        socket.on('led_snapshot', (data) => {
-            const leds = data.states || data;
-            for (const [color, state] of Object.entries(leds)) {
-                const btn = SIMON_BTNS[color];
-                if (btn) {
-                    if (state === 'on') btn.classList.add('active');
-                    else btn.classList.remove('active');
-                }
-            }
-        });
-
-        socket.on('difficulty_changed', (data) => {
-            DIFF_BTNS.forEach(btn => {
-                if (btn.dataset.level === data.level) btn.classList.add('active-diff');
-                else btn.classList.remove('active-diff');
-            });
-        });
-
-        // Name Input Logic
-        socket.on('request_name', (data) => {
-            if (!isNameInputActive) {
-                isNameInputActive = true;
-                scoreDisplay.textContent = data.score;
-                nameInput.value = '';
-                modal.show();
-                setTimeout(() => nameInput.focus(), 500);
-            }
-        });
-
-        // Handle Input Submission
-        nameForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const name = nameInput.value.trim();
-            if (name && socket.connected) {
-                socket.emit('submit_highscore', { name: name });
-                modal.hide();
-                isNameInputActive = false;
-            }
-        });
-
-        // Button Clicks
-        Object.entries(SIMON_BTNS).forEach(([color, btn]) => {
-            const handleInput = (e) => {
-                if (e.type === 'touchstart') e.preventDefault();
-                
-                // Visual feedback
-                btn.classList.add('active');
-                setTimeout(() => btn.classList.remove('active'), 200);
-
-                if (socket.connected) {
-                    socket.emit('remote_input', { color: color });
-                }
-            };
-            btn.addEventListener('mousedown', handleInput);
-            btn.addEventListener('touchstart', handleInput, { passive: false });
-        });
-
-        // Difficulty selection
-        DIFF_BTNS.forEach(btn => {
-            btn.addEventListener('click', () => {
-                socket.emit('change_difficulty', { level: btn.dataset.level });
-            });
-        });
-
-        const startBtn = document.getElementById('start-btn');
-        const lcdStatus = document.getElementById('lcd-status');
-        const lcdScore = document.getElementById('lcd-score');
-        let currentLevel = 0;
-
-        startBtn.addEventListener('click', () => {
-            socket.emit('start_game');
-            startBtn.disabled = true;
-            startBtn.textContent = 'RUNNING';
-            currentLevel = 1;
-            lcdScore.textContent = `LEVEL: ${currentLevel}`;
-        });
-
-        socket.on('game_over', (data) => {
-            startBtn.disabled = false;
-            startBtn.textContent = 'START';
-            
-            // Trigger Glitch
-            lcdStatus.classList.add('glitch-flash');
-            lcdStatus.textContent = 'CRITICAL ERROR';
-            lcdStatus.style.color = '#ff0000';
-            
-            setTimeout(() => {
-                lcdStatus.classList.remove('glitch-flash');
-                lcdStatus.style.color = '#00d2ff';
-                lcdStatus.textContent = 'System Ready';
-            }, 3000);
-        });
-
-        socket.on('game_status', (data) => {
-            lcdStatus.textContent = data.msg;
-            if (data.msg === 'Spiel startet!') {
-                startBtn.disabled = true;
-                startBtn.textContent = 'RUNNING';
-                currentLevel = 1;
-                lcdScore.textContent = `LEVEL: ${currentLevel}`;
-            }
-            if (data.msg === 'Du bist dran!') {
-                lcdStatus.style.color = '#00ff00';
-            } else {
-                lcdStatus.style.color = '#00d2ff';
-            }
-        });
-
-        socket.on('led_state', (data) => {
-            // When Simon flashes an LED, we can assume level progress 
-            // but the backend sends game_status for major phases.
-        });
-
-        // Watchdog
-        setInterval(() => {
-            if (socket.connected) socket.emit('request_led_snapshot');
-        }, 1000);
+    // Verbindungshändling
+    socket.on('connect', () => {
+        STATUS_DOT.classList.add('connected');
+        socket.emit('request_snapshot');
     });
+    socket.on('disconnect', () => {
+        STATUS_DOT.classList.remove('connected');
+    });
+
+    // LED Steuerung
+    socket.on('led_state', (data) => {
+        const btn = BTNS[data.color];
+        if (btn) {
+            if (data.state === 'on') btn.classList.add('active');
+            else btn.classList.remove('active');
+        }
+    });
+
+    socket.on('led_snapshot', (data) => {
+        const states = data.states || data;
+        for (const [color, state] of Object.entries(states)) {
+            const btn = BTNS[color];
+            if (btn && state === 'on') btn.classList.add('active');
+            else if (btn) btn.classList.remove('active');
+        }
+    });
+
+    // Game Events
+    socket.on('game_status', (data) => {
+        LCD_STATUS.textContent = data.msg;
+        if (data.msg === 'Spiel startet!') {
+            START_BTN.disabled = true;
+            START_BTN.textContent = 'RUNNING';
+        }
+    });
+
+    socket.on('game_over', (data) => {
+        START_BTN.disabled = false;
+        START_BTN.textContent = 'START';
+        LCD_STATUS.textContent = 'GAME OVER';
+        document.getElementById('final-score').textContent = data.score;
+    });
+
+    socket.on('request_name', (data) => {
+        if (!isNameActive) {
+            isNameActive = true;
+            document.getElementById('final-score').textContent = data.score;
+            modal.show();
+        }
+    });
+
+    // Inputs
+    Object.entries(BTNS).forEach(([color, btn]) => {
+        btn.addEventListener('mousedown', () => {
+            btn.classList.add('active');
+            setTimeout(() => btn.classList.remove('active'), 200);
+            socket.emit('remote_input', { color: color });
+        });
+    });
+
+    START_BTN.addEventListener('click', () => {
+        socket.emit('start_game');
+    });
+
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            socket.emit('change_difficulty', { level: btn.dataset.level });
+        });
+    });
+
+    socket.on('difficulty_changed', (data) => {
+        document.querySelectorAll('.diff-btn').forEach(b => {
+            if (b.dataset.level === data.level) b.classList.add('active-diff');
+            else b.classList.remove('active-diff');
+        });
+    });
+
+    nameForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('player-name').value;
+        socket.emit('submit_highscore', { name: name });
+        modal.hide();
+        isNameActive = false;
+    });
+
+    // Watchdog
+    setInterval(() => {
+        if (socket.connected) socket.emit('request_led_snapshot');
+    }, 2000);
+});
 </script>
 {% endblock %}
