@@ -16,9 +16,9 @@ def create_app():
     import app.db as my_db
     my_db.init_app(app)
     
-    # In Container-Umgebungen ist eventlet oder gevent meist stabiler
-    # Hier nutzen wir eventlet (passend zum monkey_patch in run.py)
-    socketio.init_app(app, cors_allowed_origins="*", async_mode='eventlet')
+    # Da wir Python 3.13 nutzen, verwenden wir den Standard-Threading-Modus
+    # eventlet ist momentan nicht kompatibel mit 3.13 (ssl.wrap_socket Fehler)
+    socketio.init_app(app, cors_allowed_origins="*", async_mode='threading')
 
     # Blueprints registrieren
     from app.routes.main import main_bp
