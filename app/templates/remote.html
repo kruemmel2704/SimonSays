@@ -418,10 +418,33 @@
 {% block extra_js %}
 <!-- Socket.IO is already in base.html -->
 <script>
-    const socket = io('/remote');
+    // Socket.IO Instanz mit explizitem Namespace und Pfad
+    // Wir nutzen die aktuelle URL des Browsers, um Verbindungsfehler zu vermeiden
+    const socket = io('/remote', {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 10
+    });
 
     // Setup Visuals
     const gameBoard = document.querySelector('.game-board');
+    const lcdStatus = document.getElementById('lcd-status');
+    const lcdScore = document.getElementById('lcd-score');
+    const STATUS_DOT = document.getElementById('status-indicator');
+
+    function log(msg, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        console.log(`[${timestamp}] ${msg}`);
+        if (type === 'error' && lcdStatus) {
+            lcdStatus.textContent = "CONN ERROR";
+            lcdStatus.style.color = "#ff0000";
+        }
+    }
+
+    // State
+    let isNameInputActive = false;
+
     const SIMON_BTNS = {
         'green': document.getElementById('btn-green'),
         'red': document.getElementById('btn-red'),
@@ -429,7 +452,6 @@
         'blue': document.getElementById('btn-blue')
     };
     const DIFF_BTNS = document.querySelectorAll('.diff-btn');
-    const STATUS_DOT = document.getElementById('status-indicator');
 
     // Modal Elements
     const modalElement = document.getElementById('nameInputModal');
@@ -437,13 +459,6 @@
     const nameForm = document.getElementById('name-form');
     const nameInput = document.getElementById('player-name');
     const scoreDisplay = document.getElementById('final-score');
-
-    function log(msg) {
-        console.log(msg);
-    }
-
-    // State
-    let isNameInputActive = false;
 
     // Difficulty Handling
     function setDifficulty(level) {
