@@ -72,10 +72,11 @@ def create_app():
     def game_socket_callback(event, data):
         try:
             with app.app_context():
-                # Wir emittieren jetzt global (ohne Namespace)
-                socketio.emit(event, data)
+                # Wir emittieren an beide Namespaces, damit Dashboard und Remote alles mitbekommen
+                socketio.emit(event, data) # Global (/)
+                socketio.emit(event, data, namespace='/remote') # Remote (/remote)
         except Exception as e:
-            print(f"ERROR: {e}")
+            print(f"ERROR beim Emittieren: {e}")
 
     try:
         game_instance = SimonSaysGame(socket_callback=game_socket_callback)
