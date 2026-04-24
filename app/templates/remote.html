@@ -151,11 +151,11 @@
 {% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    // Socket Initialisierung
-    // Wenn /remote nicht geht, versuchen wir es ohne Namespace
+    // --- SOCKET.IO LOGIK ---
     const socket = io('/remote', {
         transports: ['polling', 'websocket'],
-        timeout: 5000
+        reconnection: true,
+        timeout: 10000
     });
     
     // Elemente
@@ -173,31 +173,56 @@ document.addEventListener("DOMContentLoaded", () => {
     const modal = new bootstrap.Modal(document.getElementById('nameInputModal'));
     const nameForm = document.getElementById('name-form');
     let isNameActive = false;
+    let usePollingFallback = false;
 
     // Verbindungshändling
     socket.on('connect', () => {
-        console.log("Verbunden!");
+        console.log("Socket.IO verbunden!");
+        usePollingFallback = false; // Polling deaktivieren, wenn Sockets gehen
         STATUS_DOT.classList.add('connected');
-        LCD_STATUS.textContent = "CONNECTED ONLINE";
+        LCD_STATUS.textContent = "CONNECTED (REALTIME)";
         LCD_STATUS.style.color = "#00ff00";
         socket.emit('request_snapshot');
     });
 
     socket.on('connect_error', (err) => {
-        console.error("Connect Error:", err);
-        LCD_STATUS.textContent = "OFFLINE / ERROR";
-        LCD_STATUS.style.color = "#ff0000";
+        console.warn("Socket.IO Fehler, nutze Polling-Backup...");
+        usePollingFallback = true;
         STATUS_DOT.classList.remove('connected');
+        LCD_STATUS.textContent = "SYNC (POLLING)";
+        LCD_STATUS.style.color = "#ff9800";
     });
 
-    socket.on('disconnect', () => {
-        LCD_STATUS.textContent = "DISCONNECTED";
-        LCD_STATUS.style.color = "#ff0000";
-        STATUS_DOT.classList.remove('connected');
-    });
+    // --- POLLING FALLBACK (Wie in der Debug-Umgebung) ---
+    function runPolling() {
+        if (!usePollingFallback && socket.connected) return;
 
-    // LED Steuerung
+        fetch('/admin/status') // Wir nutzen den funktionierenden Debug-Endpunkt
+            .then(res => res.json())
+            .then(data => {
+                // LEDs synchronisieren
+                for (const [color, state] of Object.entries(data.leds)) {
+                    const btn = BTNS[color];
+                    if (btn) {
+                        if (state === 'on') btn.classList.add('active');
+                        else btn.classList.remove('active');
+                    }
+                }
+                // Schwierigkeit synchronisieren
+                document.querySelectorAll('.diff-btn').forEach(b => {
+                    if (b.dataset.level === data.current_difficulty) b.classList.add('active-diff');
+                    else b.classList.remove('active-diff');
+                });
+            })
+            .catch(err => console.error("Polling Fehler:", err));
+    }
+
+    // Polling alle 500ms ausführen, falls Socket nicht da ist
+    setInterval(runPolling, 500);
+
+    // --- GAME EVENTS ---
     socket.on('led_state', (data) => {
+        if (usePollingFallback) return; // Verhindert doppelte Updates
         const btn = BTNS[data.color];
         if (btn) {
             if (data.state === 'on') btn.classList.add('active');
