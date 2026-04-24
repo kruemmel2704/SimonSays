@@ -1,19 +1,55 @@
-# Dokumentation: Raspberry Pi Simon Says (Cyber-Physical System)
+# 🚀 Raspberry Pi Simon Says (Cyber-Physical System)
+
+### Ein vernetztes Gedächtnisspiel zwischen Hardware und Web
+
+Dieses Schulprojekt im Fachbereich Informatik/Technik realisiert das klassische **Simon Says** Gedächtnisspiel und demonstriert dabei die Prinzipien eines **Cyber-Physical Systems (CPS)**. Ein Raspberry Pi 4B steuert als zentrale Verarbeitungseinheit die Interaktion zwischen physischen Komponenten (LEDs, Taster, SNES Controller) und einer modernen Web-Oberfläche.
+
+---
+
+## 📸 Hardware Impressionen
+
+Um den Aufbau des Projekts zu verdeutlichen, sind hier aktuelle Aufnahmen der Hardware-Integration zu sehen:
+
+| **Gesamt-Setup** | **Raspberry Pi 4B** |
+| :---: | :---: |
+| ![Setup Wide](screenshots/setup_wide.jpg) | ![Pi Top](screenshots/pi_top.jpg) |
+| *Überblick über das gesamte System* | *Die zentrale Recheneinheit* |
+
+| **Steckbrett & Interaktion** | **Eingabegeräte** | **Seitenansicht** |
+| :---: | :---: | :---: |
+| ![Breadboard Close](screenshots/breadboard_close.jpg) | ![SNES Controller](screenshots/snes_controller.jpg) | ![Setup Side](screenshots/setup_side.jpg) |
+| *LEDs, Taster und Buzzer im Detail* | *Klassischer SNES Controller* | *Kompakter Aufbau mit Lego-Struktur* |
+
+---
+
+## ✨ Features
+
+- **Cyber-Physical Logic:** Nahtlose Verbindung zwischen Python-Spiellogik und physischer Hardware.
+- **Echtzeit-Dashboard:** Web-Schnittstelle zur Visualisierung von Highscores und Spielstatus.
+- **Digitaler Zwilling:** Alle Hardware-Aktionen werden live im Browser gespiegelt.
+- **Multimodalität:** Steuerung wahlweise über Taster, SNES Controller oder Web-Oberfläche.
+- **Docker-Ready:** Vollständig containerisierte Umgebung für einfache Portierbarkeit.
+
+---
 
 ## 1. Projektübersicht
-Dieses Schulprojekt im Fachbereich Informatik/Technik realisiert das klassische "Simon Says" Gedächtnisspiel und demonstriert dabei die Prinzipien eines **Cyber-Physical Systems (CPS)**. Ein Raspberry Pi 4B steuert als zentrale Verarbeitungseinheit vier LEDs (Aktoren) und registriert Eingaben über Taster sowie einen SNES Controller (Sensoren). Ziel ist es, eine zufällig generierte und immer länger werdende Sequenz von Lichtsignalen fehlerfrei zu wiederholen. Ein aktiver Buzzer gibt akustisches Feedback zum Spielstatus. Durch die Integration einer Web-Oberfläche wird das lokale Hardware-System zu einem vollständig vernetzten IoT/CPS-Ökosystem erweitert.
+Ziel des Projekts ist es, eine zufällig generierte und immer länger werdende Sequenz von Lichtsignalen fehlerfrei zu wiederholen. Ein aktiver Buzzer gibt akustisches Feedback zum Spielstatus. Durch die Integration einer Web-Oberfläche wird das lokale Hardware-System zu einem vollständig vernetzten IoT/CPS-Ökosystem erweitert.
+
 
 ## 2. Hardware-Komponenten (Physische Schnittstellen)
 
-- **Zentraleinheit**: Raspberry Pi 4 Model B 
-- **Eingabe (Sensoren)**: 
-  - 4x Push-Button (Spiel-Taster: Rot, Grün, Blau, Gelb)
-  - 3x Push-Button (Schwierigkeitsgrad: Easy, Medium, Hard)
-  - 1x SNES Controller (Erweiterte Eingabeschnittstelle über Schieberegister-Protokoll)
-- **Ausgabe (Aktoren)**: 
-  - 4x LED (Optisch: Rot, Grün, Blau, Gelb)
-  - 1x Aktiver Buzzer (Akustisches Feedback)
-- **Elektronik**: 4x 220 $\Omega$ Vorwiderstände (für LEDs), Jumper-Kabel und Breadboard.
+Das System besteht aus verschiedenen Sensoren und Aktoren, die über die GPIO-Leiste des Raspberry Pi angesteuert werden:
+
+*   **Zentraleinheit:** Raspberry Pi 4 Model B
+*   **Sensoren (Eingabe):**
+    *   **4x Push-Button:** Spiel-Taster (Rot, Grün, Blau, Gelb)
+    *   **3x Push-Button:** Schwierigkeitsgrad (Easy, Medium, Hard)
+    *   **1x SNES Controller:** Erweiterte Eingabe über Schieberegister-Protokoll
+*   **Aktoren (Ausgabe):**
+    *   **4x LED:** Optische Signale (Rot, Grün, Blau, Gelb)
+    *   **1x Aktiver Buzzer:** Akustisches Feedback
+*   **Zubehör:** 4x 220 $\Omega$ Vorwiderstände, Jumper-Kabel, Breadboard und Lego-Halterungen.
+
 
 ## 3. Anschlussplan (GPIO Belegung)
 
@@ -167,9 +203,15 @@ docker compose logs -f
 - ****Case Sensitivity****: Unter Linux muss die Konfigurationsdatei strikt kleingeschrieben als config.py vorliegen, damit der Import im Docker-Container funktioniert.
 
 
-<<<<<<< HEAD
-****Projekt von****: ***Sebastian Scholtysek, Robin Zindler, Lars Krümmel***
+---
+
+**Projekt realisiert von:**  
+👤 **Sebastian Scholtysek** | 👤 **Robin Zindler** | 👤 **Lars Krümmel**
+
+---
+
 ## 7. Die Web-Oberfläche (Netzwerk-Komponente des CPS)
+
 
 Um das Projekt zu einem vollwertigen Cyber-Physical System zu erweitern, wurde das lokale Hardware-Setup um eine vernetzte Komponente ergänzt. Eine in Python (Flask) geschriebene Web-Applikation (`app/`) dient als digitale Schnittstelle und verknüpft die physischen Sensoren und Aktoren des Raspberry Pi mit einem netzwerkbasierten Dashboard.
 
