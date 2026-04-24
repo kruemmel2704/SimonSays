@@ -151,11 +151,11 @@
 {% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    // Socket Initialisierung (Lokal)
-    // Wir fangen mit Polling an, da das am stabilsten ist und WebSockets oft geblockt werden
+    // Socket Initialisierung
+    // Wenn /remote nicht geht, versuchen wir es ohne Namespace
     const socket = io('/remote', {
         transports: ['polling', 'websocket'],
-        upgrade: true
+        timeout: 5000
     });
     
     // Elemente
@@ -176,25 +176,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Verbindungshändling
     socket.on('connect', () => {
-        console.log("Verbunden mit /remote Namespace via " + socket.io.engine.transport.name);
+        console.log("Verbunden!");
         STATUS_DOT.classList.add('connected');
+        LCD_STATUS.textContent = "CONNECTED ONLINE";
+        LCD_STATUS.style.color = "#00ff00";
         socket.emit('request_snapshot');
-        
-        // Optisches Feedback im LCD
-        if(LCD_STATUS.textContent === "System Ready") {
-            LCD_STATUS.textContent = "CONNECTED ONLINE";
-            setTimeout(() => { if(LCD_STATUS.textContent === "CONNECTED ONLINE") LCD_STATUS.textContent = "System Ready"; }, 2000);
-        }
+    });
+
+    socket.on('connect_error', (err) => {
+        console.error("Connect Error:", err);
+        LCD_STATUS.textContent = "OFFLINE / ERROR";
+        LCD_STATUS.style.color = "#ff0000";
+        STATUS_DOT.classList.remove('connected');
     });
 
     socket.on('disconnect', () => {
-        console.warn("Verbindung verloren!");
+        LCD_STATUS.textContent = "DISCONNECTED";
+        LCD_STATUS.style.color = "#ff0000";
         STATUS_DOT.classList.remove('connected');
     });
 
     // LED Steuerung
     socket.on('led_state', (data) => {
-        console.log("LED Event:", data.color, data.state);
         const btn = BTNS[data.color];
         if (btn) {
             if (data.state === 'on') btn.classList.add('active');
