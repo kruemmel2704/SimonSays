@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Simon Live Control{% endblock %}
+{% block title %}Simonsays - Remote{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -90,16 +90,25 @@
         {% endfor %}
     </div>
 
-    <!-- Name Modal -->
-    <div class="modal fade" id="nameInputModal" data-bs-backdrop="static" tabindex="-1">
+    <!-- Highscore Entry Modal -->
+    <div class="modal fade" id="nameInputModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-hidden="true" style="z-index: 10000;">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content bg-dark text-white border-info">
-                <div class="modal-body text-center p-4">
-                    <h2 class="font-orbitron text-info mb-3">GAME OVER</h2>
-                    <p class="lead">Dein Score: <span id="final-score" class="text-warning fw-bold">0</span></p>
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title font-orbitron">Game Over!</h5>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="lead">Score: <span id="final-score" class="fw-bold text-warning">0</span></p>
+                    <p>Save your Highscore:</p>
                     <form id="name-form">
-                        <input type="text" class="form-control mb-3 text-center bg-secondary text-white border-0" id="player-name" placeholder="DEIN NAME" required>
-                        <button type="submit" class="btn btn-info w-100 fw-bold">HIGHSCORE SPEICHERN</button>
+                        <div class="mb-3">
+                            <input type="text" class="form-control bg-secondary text-white border-0 text-center"
+                                id="player-name" placeholder="YOUR NAME" required autocomplete="off">
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-info fw-bold">SAVE & RESTART</button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -110,128 +119,134 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-    // --- LIVE SOCKET INITIALISIERUNG ---
-    // Wir verzichten auf Namespaces für maximale Stabilität
-    const socket = io({
-        transports: ['polling', 'websocket'],
-        reconnection: true
-    });
-    
-    // UI Elemente
-    const STATUS_DOT = document.getElementById('status-indicator');
-    const LCD_STATUS = document.getElementById('lcd-status');
-    const LCD_SCORE = document.getElementById('lcd-score');
-    const START_BTN = document.getElementById('start-btn');
-    const BTNS = {
+    // In d6ffffec war es der Standard-Socket für alles
+    const socket = io();
+
+    // Setup Visuals
+    const SIMON_BTNS = {
         'green': document.getElementById('btn-green'),
         'red': document.getElementById('btn-red'),
         'yellow': document.getElementById('btn-yellow'),
         'blue': document.getElementById('btn-blue')
     };
-    
-    const modal = new bootstrap.Modal(document.getElementById('nameInputModal'));
+    const DIFF_BTNS = document.querySelectorAll('.diff-btn');
+    const STATUS_DOT = document.getElementById('status-indicator');
+    const LCD_STATUS = document.getElementById('lcd-status');
+    const LCD_SCORE = document.getElementById('lcd-score');
+
+    // Modal Elements
+    const modalElement = document.getElementById('nameInputModal');
+    const modal = new bootstrap.Modal(modalElement);
     const nameForm = document.getElementById('name-form');
-    let gameActive = false;
+    const nameInput = document.getElementById('player-name');
+    const scoreDisplay = document.getElementById('final-score');
 
-    // --- SOCKET EVENTS ---
-    socket.on('connect', () => {
-        console.log("Live-Verbindung hergestellt!");
-        STATUS_DOT.classList.add('connected');
-        LCD_STATUS.textContent = "LIVE CONNECTED";
-        LCD_STATUS.style.color = "#00ff00";
-        socket.emit('request_snapshot');
-    });
+    // State
+    let isNameInputActive = false;
 
-    socket.on('connect_error', () => {
-        STATUS_DOT.classList.remove('connected');
-        LCD_STATUS.textContent = "CONNECTING...";
-        LCD_STATUS.style.color = "#ffae00";
-    });
-
-    socket.on('led_state', (data) => {
-        console.log("LED Update:", data);
-        const btn = BTNS[data.color];
-        if (btn) {
-            if (data.state === 'on') btn.classList.add('active');
-            else btn.classList.remove('active');
-        }
-    });
-
-    socket.on('led_snapshot', (data) => {
-        const states = data.states || data;
-        for (const [color, state] of Object.entries(states)) {
-            const btn = BTNS[color];
-            if (btn && state === 'on') btn.classList.add('active');
-            else if (btn) btn.classList.remove('active');
-        }
-    });
-
-    socket.on('game_status', (data) => {
-        LCD_STATUS.textContent = data.msg;
-        if (data.msg.includes("startet")) {
-            START_BTN.disabled = true;
-            START_BTN.textContent = "LÄUFT...";
-        }
-    });
-
-    socket.on('game_over', (data) => {
-        START_BTN.disabled = false;
-        START_BTN.textContent = "START GAME";
-        LCD_STATUS.textContent = "GAME OVER";
-        LCD_STATUS.style.color = "#ff0000";
-    });
-
-    socket.on('request_name', (data) => {
-        document.getElementById('final-score').textContent = data.score;
-        modal.show();
-    });
-
-    socket.on('difficulty_changed', (data) => {
-        document.querySelectorAll('.diff-btn').forEach(b => {
-            if (b.dataset.level === data.level) b.classList.add('active-diff');
-            else b.classList.remove('active-diff');
+    document.addEventListener("DOMContentLoaded", () => {
+        // Socket Events
+        socket.on('connect', () => {
+            console.log("Verbunden!");
+            STATUS_DOT.classList.remove('disconnected');
+            STATUS_DOT.classList.add('connected');
+            LCD_STATUS.textContent = "LIVE CONNECTED";
+            socket.emit('request_snapshot');
         });
-    });
 
-    // --- USER INTERACTION (SEND TO PI) ---
-    
-    // Buttons klicken
-    Object.entries(BTNS).forEach(([color, btn]) => {
-        const triggerInput = (e) => {
+        socket.on('disconnect', () => {
+            STATUS_DOT.classList.remove('connected');
+            LCD_STATUS.textContent = "DISCONNECTED";
+        });
+
+        socket.on('led_state', (data) => {
+            const btn = SIMON_BTNS[data.color];
+            if (btn) {
+                if (data.state === 'on') btn.classList.add('active');
+                else btn.classList.remove('active');
+            }
+        });
+
+        socket.on('led_snapshot', (leds) => {
+            const data = leds.states || leds;
+            for (const [color, state] of Object.entries(data)) {
+                const btn = SIMON_BTNS[color];
+                if (btn) {
+                    if (state === 'on') btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+            }
+        });
+
+        socket.on('game_status', (data) => {
+            LCD_STATUS.textContent = data.msg;
+            if (data.msg.includes("startet")) {
+                document.getElementById('start-btn').disabled = true;
+            }
+        });
+
+        socket.on('game_over', (data) => {
+            document.getElementById('start-btn').disabled = false;
+            LCD_STATUS.textContent = "GAME OVER";
+        });
+
+        socket.on('difficulty_changed', (data) => {
+            DIFF_BTNS.forEach(btn => {
+                if (btn.dataset.level === data.level) btn.classList.add('active-diff');
+                else btn.classList.remove('active-diff');
+            });
+        });
+
+        // Name Input Logic
+        socket.on('request_name', (data) => {
+            if (!isNameInputActive) {
+                isNameInputActive = true;
+                scoreDisplay.textContent = data.score;
+                nameInput.value = '';
+                modal.show();
+                setTimeout(() => nameInput.focus(), 500);
+            }
+        });
+
+        // Handle Input Submission
+        nameForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            btn.classList.add('active');
-            setTimeout(() => btn.classList.remove('active'), 150);
-            socket.emit('remote_input', { color: color });
-        };
-        btn.addEventListener('mousedown', triggerInput);
-        btn.addEventListener('touchstart', triggerInput);
-    });
-
-    // Start-Button
-    START_BTN.addEventListener('click', () => {
-        socket.emit('start_game');
-    });
-
-    // Schwierigkeit ändern
-    document.querySelectorAll('.diff-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            socket.emit('change_difficulty', { level: btn.dataset.level });
+            const name = nameInput.value.trim();
+            if (name) {
+                socket.emit('submit_highscore', { name: name });
+                modal.hide();
+                isNameInputActive = false;
+            }
         });
-    });
 
-    // Highscore Name abschicken
-    nameForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const name = document.getElementById('player-name').value;
-        socket.emit('submit_highscore', { name: name });
-        modal.hide();
-    });
+        // Button Clicks (Kopie aus funktionierendem Stand)
+        Object.entries(SIMON_BTNS).forEach(([color, btn]) => {
+            const handleInput = (e) => {
+                if (e.type === 'touchstart') e.preventDefault();
+                btn.classList.add('active');
+                setTimeout(() => btn.classList.remove('active'), 200);
+                socket.emit('remote_input', { color: color });
+            };
+            btn.addEventListener('mousedown', handleInput);
+            btn.addEventListener('touchstart', handleInput, { passive: false });
+        });
 
-    // Watchdog (fragt alle 3 Sek zur Sicherheit den LED-Status ab)
-    setInterval(() => {
-        if (socket.connected) socket.emit('request_snapshot');
-    }, 3000);
-});
+        // Start Button
+        document.getElementById('start-btn').addEventListener('click', () => {
+            socket.emit('start_game');
+        });
+
+        // Difficulty
+        DIFF_BTNS.forEach(btn => {
+            btn.addEventListener('click', () => {
+                socket.emit('change_difficulty', { level: btn.dataset.level });
+            });
+        });
+
+        // Watchdog
+        setInterval(() => {
+            if (socket.connected) socket.emit('request_snapshot');
+        }, 3000);
+    });
 </script>
 {% endblock %}
