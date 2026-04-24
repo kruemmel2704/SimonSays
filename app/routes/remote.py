@@ -41,6 +41,15 @@ def handle_difficulty(data):
     if level in DIFFICULTY_SETTINGS and app.game_instance:
         app.game_instance.set_difficulty(level)
 
+@socketio.on('submit_highscore', namespace='/remote')
+def handle_submit_highscore(data):
+    name = data.get('name')
+    print(f"Highscore-Name empfangen: {name}")
+    import app
+    if app.game_instance:
+        # Reicht den Namen an die Spiellogik weiter
+        app.game_instance.on_name_submitted(name)
+
 @socketio.on('start_game', namespace='/remote')
 def handle_start_game():
     print("Start-Signal vom Web empfangen")
@@ -48,10 +57,10 @@ def handle_start_game():
     if app.game_instance:
         app.game_instance.process_remote_input("START_SIGNAL")
 
-@socketio.on('request_led_snapshot', namespace='/remote')
 @socketio.on('request_snapshot', namespace='/remote')
-def handle_request_led_snapshot():
+def handle_request_snapshot():
     """Erlaubt dem Frontend ein aktives Nachziehen des Live-Zustands."""
     import app
     if app.game_instance:
         emit('led_snapshot', {'states': app.game_instance.get_led_snapshot()})
+        emit('difficulty_changed', {'level': app.game_instance.current_difficulty})
