@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 import threading
 import sys
 import os

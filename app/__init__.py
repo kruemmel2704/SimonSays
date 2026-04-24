@@ -16,8 +16,9 @@ def create_app():
     import app.db as my_db
     my_db.init_app(app)
     
-    # Wir erzwingen 'threading' mode, da wir manuell Threads starten und eventlet Konflikte verursacht
-    socketio.init_app(app, cors_allowed_origins="*", async_mode="threading")
+    # In Container-Umgebungen ist eventlet oder gevent meist stabiler
+    # Hier nutzen wir eventlet (passend zum monkey_patch in run.py)
+    socketio.init_app(app, cors_allowed_origins="*", async_mode='eventlet')
 
     # Blueprints registrieren
     from app.routes.main import main_bp
@@ -35,12 +36,15 @@ def create_app():
     from app.gpio_logic import SimonSaysGame
 
     def game_socket_callback(event, data):
+        # Print für Docker-Logs zur Diagnose
+        # print(f"DEBUG SocketIO: Sende Event '{event}' an Clients...")
         try:
-            with app.app_context():
-                socketio.emit(event, data, namespace='/remote')
-                socketio.emit(event, data) # Default namespace
+            # Wir emittieren an den Namespace /remote (Dashboard)
+            socketio.emit(event, data, namespace='/remote')
+            # Fallback für andere Subscriber
+            socketio.emit(event, data)
         except Exception as e:
-            print(f"ERROR inside game_socket_callback: {e}")
+            print(f"ERROR beim Senden von SocketIO Event: {e}")
 
     try:
         # Instanz erstellen
@@ -49,6 +53,7 @@ def create_app():
         # Hardware-Thread starten
         game_thread = threading.Thread(target=game_instance.start_game_loop, daemon=True)
         game_thread.start()
+        print("Hardware-Thread für SimonSays wurde gestartet.")
     except Exception as exc:
         game_instance = None
         app.logger.exception("SimonSays Hardware konnte nicht initialisiert werden: %s", exc)
