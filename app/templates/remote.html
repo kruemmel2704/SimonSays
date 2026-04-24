@@ -1,94 +1,54 @@
 {% extends "base.html" %}
 
-{% block title %}Simon Command Center{% endblock %}
+{% block title %}Simon Live Control{% endblock %}
 
 {% block extra_css %}
 <style>
     body, html { user-select: none; overflow-x: hidden; }
     .simon-wrapper {
-        position: relative;
-        width: 100%;
-        min-height: 85vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+        position: relative; width: 100%; min-height: 85vh;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
         z-index: 10;
-        background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
-        background-size: 40px 40px;
     }
     .game-board {
-        position: relative;
-        width: min(75vmin, 460px);
-        height: min(75vmin, 460px);
-        border-radius: 50%;
-        background: radial-gradient(circle, #2a2a2a 0%, #111 100%);
-        padding: 15px;
-        box-shadow: 0 30px 60px rgba(0,0,0,0.8), 0 0 30px rgba(255, 0, 255, 0.2);
-        border: 2px solid rgba(255, 255, 255, 0.05);
-        animation: board-float 6s ease-in-out infinite;
+        position: relative; width: min(75vmin, 460px); height: min(75vmin, 460px);
+        border-radius: 50%; background: radial-gradient(circle, #2a2a2a 0%, #111 100%);
+        padding: 15px; box-shadow: 0 30px 60px rgba(0,0,0,0.8), 0 0 30px rgba(255, 0, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.05); animation: board-float 6s ease-in-out infinite;
     }
-    @keyframes board-float {
-        0%, 100% { transform: translateY(0) rotateX(5deg); }
-        50% { transform: translateY(-15px) rotateX(10deg); }
-    }
+    @keyframes board-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     .game-board-inner {
-        position: relative;
-        width: 100%; height: 100%;
-        border-radius: 50%;
-        overflow: hidden;
-        background: #000;
-        box-shadow: inset 0 0 40px #000;
-        border: 4px solid #111;
-        transform: rotate(45deg) !important;
+        position: relative; width: 100%; height: 100%; border-radius: 50%;
+        overflow: hidden; background: #000; box-shadow: inset 0 0 40px #000;
+        border: 4px solid #111; transform: rotate(45deg);
     }
     .simon-btn {
-        position: absolute;
-        width: 50%; height: 50%;
-        opacity: 0.4;
-        transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-        border: 4px solid rgba(0,0,0,0.4);
-        box-sizing: border-box;
+        position: absolute; width: 50%; height: 50%; opacity: 0.4;
+        transition: all 0.15s ease; cursor: pointer; border: 4px solid rgba(0,0,0,0.4); box-sizing: border-box;
     }
     #btn-blue { top: 0; left: 0; background-color: #0044b3; border-top-left-radius: 100%; }
     #btn-red { top: 0; right: 0; background-color: #b30000; border-top-right-radius: 100%; }
     #btn-yellow { bottom: 0; right: 0; background-color: #b3a400; border-bottom-right-radius: 100%; }
     #btn-green { bottom: 0; left: 0; background-color: #008037; border-bottom-left-radius: 100%; }
 
-    .simon-btn.active {
-        opacity: 1 !important;
-        transform: scale(0.96);
-        z-index: 10;
-        filter: brightness(1.5);
-    }
+    .simon-btn.active { opacity: 1 !important; transform: scale(0.96); filter: brightness(1.6); }
     #btn-green.active { box-shadow: 0 0 50px #00e676; background-color: #00e676; }
     #btn-red.active { box-shadow: 0 0 50px #ff5252; background-color: #ff5252; }
     #btn-yellow.active { box-shadow: 0 0 50px #ffff00; background-color: #ffff00; }
     #btn-blue.active { box-shadow: 0 0 50px #448aff; background-color: #448aff; }
 
     .center-decoration {
-        position: absolute;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%) rotate(-45deg);
-        width: 38%; height: 38%;
-        background: #181818;
-        border-radius: 50%;
-        z-index: 50;
-        border: 8px solid #080808;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg);
+        width: 38%; height: 38%; background: #181818; border-radius: 50%; z-index: 50;
+        border: 8px solid #080808; display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
-    .brand-text { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 20px; color: #fff; letter-spacing: 2px; }
+    .brand-text { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 20px; color: #fff; }
     #status-indicator { width: 12px; height: 12px; border-radius: 50%; background-color: #333; margin-top: 5px; }
     #status-indicator.connected { background-color: #00ff00; box-shadow: 0 0 10px #00ff00; }
 
     .game-display {
-        width: min(80vw, 300px);
-        background: #050505;
-        border: 2px solid #333;
-        border-radius: 10px;
-        padding: 10px; margin-bottom: 20px; text-align: center;
+        width: min(80vw, 300px); background: #050505; border: 2px solid #333;
+        border-radius: 10px; padding: 10px; margin-bottom: 20px; text-align: center;
     }
     #lcd-status { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #00d2ff; text-transform: uppercase; }
     #lcd-score { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; color: #ff00ff; }
@@ -97,9 +57,9 @@
         margin-top: 30px; display: flex; gap: 10px;
         background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 30px;
     }
-    .diff-btn { background: #222; color: #888; border: 1px solid #444; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
-    .diff-btn.active-diff { background: #00d2ff; color: #000; }
-    .btn-start { background: #ff00ff; color: #fff; border: none; padding: 8px 25px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+    .diff-btn { background: #222; color: #888; border: 1px solid #444; padding: 10px 15px; border-radius: 20px; cursor: pointer; }
+    .diff-btn.active-diff { background: #00d2ff; color: #000; border-color: #00d2ff; }
+    .btn-start { background: #ff00ff; color: #fff; border: none; padding: 10px 25px; border-radius: 20px; font-weight: bold; cursor: pointer; }
 </style>
 {% endblock %}
 
@@ -124,22 +84,22 @@
     </div>
 
     <div class="controls-container">
-        <button id="start-btn" class="btn-start">START</button>
+        <button id="start-btn" class="btn-start">START GAME</button>
         {% for level in difficulty_settings.keys() %}
         <button class="diff-btn" data-level="{{ level }}">{{ level }}</button>
         {% endfor %}
     </div>
 
-    <!-- Modal -->
-    <div class="modal fade" id="nameInputModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <!-- Name Modal -->
+    <div class="modal fade" id="nameInputModal" data-bs-backdrop="static" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content bg-dark text-white border-info">
-                <div class="modal-body text-center">
-                    <h3>Game Over!</h3>
-                    <p>Score: <span id="final-score" class="text-warning">0</span></p>
+                <div class="modal-body text-center p-4">
+                    <h2 class="font-orbitron text-info mb-3">GAME OVER</h2>
+                    <p class="lead">Dein Score: <span id="final-score" class="text-warning fw-bold">0</span></p>
                     <form id="name-form">
-                        <input type="text" class="form-control mb-3 text-center" id="player-name" placeholder="DEIN NAME" required>
-                        <button type="submit" class="btn btn-info w-100">SPEICHERN</button>
+                        <input type="text" class="form-control mb-3 text-center bg-secondary text-white border-0" id="player-name" placeholder="DEIN NAME" required>
+                        <button type="submit" class="btn btn-info w-100 fw-bold">HIGHSCORE SPEICHERN</button>
                     </form>
                 </div>
             </div>
@@ -151,14 +111,14 @@
 {% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    // --- SOCKET.IO LOGIK ---
-    const socket = io('/remote', {
+    // --- LIVE SOCKET INITIALISIERUNG ---
+    // Wir verzichten auf Namespaces für maximale Stabilität
+    const socket = io({
         transports: ['polling', 'websocket'],
-        reconnection: true,
-        timeout: 10000
+        reconnection: true
     });
     
-    // Elemente
+    // UI Elemente
     const STATUS_DOT = document.getElementById('status-indicator');
     const LCD_STATUS = document.getElementById('lcd-status');
     const LCD_SCORE = document.getElementById('lcd-score');
@@ -172,57 +132,25 @@ document.addEventListener("DOMContentLoaded", () => {
     
     const modal = new bootstrap.Modal(document.getElementById('nameInputModal'));
     const nameForm = document.getElementById('name-form');
-    let isNameActive = false;
-    let usePollingFallback = false;
+    let gameActive = false;
 
-    // Verbindungshändling
+    // --- SOCKET EVENTS ---
     socket.on('connect', () => {
-        console.log("Socket.IO verbunden!");
-        usePollingFallback = false; // Polling deaktivieren, wenn Sockets gehen
+        console.log("Live-Verbindung hergestellt!");
         STATUS_DOT.classList.add('connected');
-        LCD_STATUS.textContent = "CONNECTED (REALTIME)";
+        LCD_STATUS.textContent = "LIVE CONNECTED";
         LCD_STATUS.style.color = "#00ff00";
         socket.emit('request_snapshot');
     });
 
-    socket.on('connect_error', (err) => {
-        console.warn("Socket.IO Fehler, nutze Polling-Backup...");
-        usePollingFallback = true;
+    socket.on('connect_error', () => {
         STATUS_DOT.classList.remove('connected');
-        LCD_STATUS.textContent = "SYNC (POLLING)";
-        LCD_STATUS.style.color = "#ff9800";
+        LCD_STATUS.textContent = "CONNECTING...";
+        LCD_STATUS.style.color = "#ffae00";
     });
 
-    // --- POLLING FALLBACK (Wie in der Debug-Umgebung) ---
-    function runPolling() {
-        if (!usePollingFallback && socket.connected) return;
-
-        fetch('/admin/status') // Wir nutzen den funktionierenden Debug-Endpunkt
-            .then(res => res.json())
-            .then(data => {
-                // LEDs synchronisieren
-                for (const [color, state] of Object.entries(data.leds)) {
-                    const btn = BTNS[color];
-                    if (btn) {
-                        if (state === 'on') btn.classList.add('active');
-                        else btn.classList.remove('active');
-                    }
-                }
-                // Schwierigkeit synchronisieren
-                document.querySelectorAll('.diff-btn').forEach(b => {
-                    if (b.dataset.level === data.current_difficulty) b.classList.add('active-diff');
-                    else b.classList.remove('active-diff');
-                });
-            })
-            .catch(err => console.error("Polling Fehler:", err));
-    }
-
-    // Polling alle 500ms ausführen, falls Socket nicht da ist
-    setInterval(runPolling, 500);
-
-    // --- GAME EVENTS ---
     socket.on('led_state', (data) => {
-        if (usePollingFallback) return; // Verhindert doppelte Updates
+        console.log("LED Update:", data);
         const btn = BTNS[data.color];
         if (btn) {
             if (data.state === 'on') btn.classList.add('active');
@@ -239,47 +167,24 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Game Events
     socket.on('game_status', (data) => {
         LCD_STATUS.textContent = data.msg;
-        if (data.msg === 'Spiel startet!') {
+        if (data.msg.includes("startet")) {
             START_BTN.disabled = true;
-            START_BTN.textContent = 'RUNNING';
+            START_BTN.textContent = "LÄUFT...";
         }
     });
 
     socket.on('game_over', (data) => {
         START_BTN.disabled = false;
-        START_BTN.textContent = 'START';
-        LCD_STATUS.textContent = 'GAME OVER';
-        document.getElementById('final-score').textContent = data.score;
+        START_BTN.textContent = "START GAME";
+        LCD_STATUS.textContent = "GAME OVER";
+        LCD_STATUS.style.color = "#ff0000";
     });
 
     socket.on('request_name', (data) => {
-        if (!isNameActive) {
-            isNameActive = true;
-            document.getElementById('final-score').textContent = data.score;
-            modal.show();
-        }
-    });
-
-    // Inputs
-    Object.entries(BTNS).forEach(([color, btn]) => {
-        btn.addEventListener('mousedown', () => {
-            btn.classList.add('active');
-            setTimeout(() => btn.classList.remove('active'), 200);
-            socket.emit('remote_input', { color: color });
-        });
-    });
-
-    START_BTN.addEventListener('click', () => {
-        socket.emit('start_game');
-    });
-
-    document.querySelectorAll('.diff-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            socket.emit('change_difficulty', { level: btn.dataset.level });
-        });
+        document.getElementById('final-score').textContent = data.score;
+        modal.show();
     });
 
     socket.on('difficulty_changed', (data) => {
@@ -289,18 +194,44 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    // --- USER INTERACTION (SEND TO PI) ---
+    
+    // Buttons klicken
+    Object.entries(BTNS).forEach(([color, btn]) => {
+        const triggerInput = (e) => {
+            e.preventDefault();
+            btn.classList.add('active');
+            setTimeout(() => btn.classList.remove('active'), 150);
+            socket.emit('remote_input', { color: color });
+        };
+        btn.addEventListener('mousedown', triggerInput);
+        btn.addEventListener('touchstart', triggerInput);
+    });
+
+    // Start-Button
+    START_BTN.addEventListener('click', () => {
+        socket.emit('start_game');
+    });
+
+    // Schwierigkeit ändern
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            socket.emit('change_difficulty', { level: btn.dataset.level });
+        });
+    });
+
+    // Highscore Name abschicken
     nameForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const name = document.getElementById('player-name').value;
         socket.emit('submit_highscore', { name: name });
         modal.hide();
-        isNameActive = false;
     });
 
-    // Watchdog
+    // Watchdog (fragt alle 3 Sek zur Sicherheit den LED-Status ab)
     setInterval(() => {
-        if (socket.connected) socket.emit('request_led_snapshot');
-    }, 2000);
+        if (socket.connected) socket.emit('request_snapshot');
+    }, 3000);
 });
 </script>
 {% endblock %}
