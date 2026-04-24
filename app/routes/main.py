@@ -1,5 +1,5 @@
 import json
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, current_app
 from app import socketio
 # from app.models import Highscore # Removed
 from app.repository import get_top_highscores
@@ -33,14 +33,8 @@ def handle_submit_highscore(data):
     if not name:
         return
 
-    import app
-    # Wir brauchen den Score vom aktuellen Spiel
-    # Da gpio_logic den Score kennt, holen wir ihn von dort oder
-    # wir speichern ihn temporär.
-    # Besser: gpio_logic wartet auf diesen Event.
-    
-    if app.game_instance:
-        app.game_instance.on_name_submitted(name)
+    if current_app.game_instance:
+        current_app.game_instance.on_name_submitted(name)
 
 
 @socketio.on('request_highscores')

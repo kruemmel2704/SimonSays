@@ -179,7 +179,7 @@ class Device:
 
 
 class LED:
-    def __init__(self, pin):
+    def __init__(self, pin, **kwargs):
         self.pin = pin
         self.is_active = False
         name = _get_pin_label(pin, "LED")
@@ -195,7 +195,7 @@ class LED:
 
 
 class Button:
-    def __init__(self, pin):
+    def __init__(self, pin, **kwargs):
         self.pin = pin
         self.when_pressed = None
         name = _get_pin_label(pin, "Button")
@@ -211,7 +211,7 @@ class Button:
 
 
 class Buzzer:
-    def __init__(self, pin):
+    def __init__(self, pin, **kwargs):
         self.pin = pin
         _get_emulator().add_buzzer(pin)
 

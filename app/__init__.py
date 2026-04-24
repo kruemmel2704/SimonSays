@@ -29,6 +29,7 @@ def create_app():
 
     with app.app_context():
         my_db.init_db()
+        app.game_instance = None # Platzhalter
 
     from app.gpio_logic import SimonSaysGame
 
@@ -79,8 +80,10 @@ def create_app():
             print(f"ERROR beim Emittieren: {e}")
 
     try:
-        game_instance = SimonSaysGame(socket_callback=game_socket_callback)
-        game_thread = threading.Thread(target=game_instance.start_game_loop, daemon=True)
+        instance = SimonSaysGame(socket_callback=game_socket_callback)
+        app.game_instance = instance
+        game_instance = instance # Abwärtskompatibilität
+        game_thread = threading.Thread(target=instance.start_game_loop, daemon=True)
         game_thread.start()
         print("Hardware-Thread gestartet.")
     except Exception as exc:
