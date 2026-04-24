@@ -42,10 +42,6 @@ def handle_submit_highscore(data):
     if app.game_instance:
         app.game_instance.on_name_submitted(name)
 
-@socketio.on('submit_highscore', namespace='/remote')
-def handle_submit_highscore_remote(data):
-    """Gleiche Logik für den remote namespace"""
-    handle_submit_highscore(data)
 
 @socketio.on('request_highscores')
 def handle_request_highscores():

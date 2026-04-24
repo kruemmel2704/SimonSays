@@ -10,8 +10,8 @@ def game_socket_callback(event, data):
 
 @socketio.on('connect', namespace='/remote')
 def handle_connect():
-    print("Client verbunden mit /remote")
-    emit('status', {'msg': 'Verbunden mit SimonSays Remote'})
+    print("Remote-Client verbunden!")
+    emit('game_status', {'msg': 'Remote verbunden'})
 
     import app
     if app.game_instance:

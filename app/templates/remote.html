@@ -119,8 +119,8 @@
 
 {% block extra_js %}
 <script>
-    // In d6ffffec war es der Standard-Socket für alles
-    const socket = io('/remote');
+    // Socket wird unten initialisiert, nachdem die UI-Elemente und Listener bereit sind
+    let socket;
 
     // Setup Visuals
     const SIMON_BTNS = {
@@ -243,10 +243,15 @@
             });
         });
 
-        // Watchdog
-        setInterval(() => {
-            if (socket.connected) socket.emit('request_snapshot');
-        }, 3000);
     });
+
+    // Erst jetzt verbinden, damit alle Listener oben registriert sind
+    socket = io('/remote');
+
+    // Watchdog
+    setInterval(() => {
+        if (socket && socket.connected) socket.emit('request_snapshot');
+    }, 3000);
+
 </script>
 {% endblock %}
